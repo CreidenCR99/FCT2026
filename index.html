@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Maquinas y Organismos</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <form id="form">
+      <h1>Filtro por organismo</h1>
+
+      <div class="form-control">
+        <label for="organismo">Organismo</label>
+        <select id="organismo" name="organismo">
+          <option value="">Cargando organismos...</option>
+        </select>
+      </div>
+
+      <div class="botones">
+        <button type="submit">Buscar</button>
+      </div>
+    </form>
+
+    <section class="tabla-section" id="tablaSection">
+      <div class="tabla-header">
+        <h2>Resultados</h2>
+
+        <div class="tabla-acciones">
+          <span id="paginacionInfo">Sin datos</span>
+          <button type="button" id="modoPresentacionBtn">
+            Pantalla completa
+          </button>
+          <button type="button" id="salirPresentacionBtn" style="display: none">
+            Salir
+          </button>
+        </div>
+      </div>
+
+      <div id="estadoTabla">Selecciona un organismo y pulsa “Buscar”.</div>
+
+      <div class="tabla-wrapper" id="tablaWrapper">
+        <table id="tablaDatos" style="display: none">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <script src="script.js"></script>
+  </body>
+</html>
