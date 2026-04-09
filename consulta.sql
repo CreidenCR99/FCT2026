@@ -1,7 +1,7 @@
 SELECT
     o.nombre AS Organismo,
     p.nombre AS Provincia,
-    ISNULL(c.nombre, 'asd') AS Cliente
+    ISNULL(c.nombre, 'error') AS Cliente
     m.Descripcion
 FROM Maquinas m
 LEFT JOIN Organismo o ON o.codigo = m.organismo

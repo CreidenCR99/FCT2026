@@ -1,27 +1,40 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // --- Elementos del DOM ---
   const form = document.getElementById("form");
   const selectOrganismo = document.getElementById("organismo");
+  const selectProvincia = document.getElementById("provincia");
   const tablaSection = document.getElementById("tablaSection");
   const tabla = document.getElementById("tablaDatos");
+  const tablaWrapper = document.getElementById("tablaWrapper");
   const thead = tabla.querySelector("thead");
   const tbody = tabla.querySelector("tbody");
   const estadoTabla = document.getElementById("estadoTabla");
   const paginacionInfo = document.getElementById("paginacionInfo");
   const modoPresentacionBtn = document.getElementById("modoPresentacionBtn");
+  const limpiarFiltrosBtn = document.getElementById("limpiarFiltrosBtn");
   const salirPresentacionBtn = document.getElementById("salirPresentacionBtn");
+  const presentacionLista = document.getElementById("presentacionLista");
 
-  const FILAS_POR_PAGINA = 10;
+  // --- Constantes de Configuracion ---
   const INTERVALO_MS = 5000;
+  const MAX_LINEAS_PRESENTACION = 21;
 
+  // --- Estado Global de la Aplicacion ---
   let datosTabla = [];
   let columnasTabla = [];
-  let paginaActual = 0;
   let autoplayInterval = null;
-  let modoPresentacion = false;
   let estadoInterval = null;
+  let modoPresentacion = false;
+  let paginasPresentacion = [];
+  let paginaPresentacionActual = 0;
 
+  // Inicializacion
   cargarOrganismos();
+  cargarProvincias();
 
+  /**
+   * Obtiene la lista de organismos desde el servidor
+   */
   async function cargarOrganismos() {
     try {
       const res = await fetch("datos.php?modo=organismos");
@@ -42,25 +55,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Obtiene la lista de provincias desde el servidor filtradas por organismo
+   * @param {string} organismo
+   */
+  async function cargarProvincias(organismo = "") {
+    try {
+      const res = await fetch(
+        `datos.php?modo=provincias&organismo=${encodeURIComponent(organismo)}`,
+      );
+      const data = await res.json();
+
+      const valorActual = selectProvincia.value;
+      selectProvincia.innerHTML =
+        '<option value="">Todas las provincias</option>';
+
+      data.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.Provincia;
+        option.textContent = item.Provincia;
+        selectProvincia.appendChild(option);
+      });
+
+      // Intentar mantener la seleccion anterior si sigue existiendo en el nuevo filtro
+      if (data.some((item) => item.Provincia === valorActual)) {
+        selectProvincia.value = valorActual;
+      }
+    } catch (error) {
+      selectProvincia.innerHTML = '<option value="">Error al cargar</option>';
+      console.error(error);
+    }
+  }
+
+  // Escuchar cambios en el organismo para actualizar provincias
+  selectOrganismo.addEventListener("change", () => {
+    cargarProvincias(selectOrganismo.value);
+  });
+
+  // Boton para limpiar filtros
+  limpiarFiltrosBtn.addEventListener("click", () => {
+    selectOrganismo.value = "";
+    selectProvincia.value = "";
+    cargarProvincias(""); // Recargar todas las provincias
+  });
+
+  /**
+   * Maneja el envio del formulario para buscar y mostrar datos
+   */
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const organismo = selectOrganismo.value;
+    const provincia = selectProvincia.value;
+
     estadoTabla.textContent = "Cargando resultados...";
-    tabla.style.display = "none";
     thead.innerHTML = "";
     tbody.innerHTML = "";
+    tabla.style.display = "none";
+    presentacionLista.hidden = true;
+    presentacionLista.innerHTML = "";
+
+    // Detener procesos activos antes de una nueva carga
     detenerAutoplay();
+    detenerActualizacionEstado();
 
     try {
       const res = await fetch(
-        `datos.php?modo=maquinas&organismo=${encodeURIComponent(organismo)}`,
+        `datos.php?modo=maquinas&organismo=${encodeURIComponent(
+          organismo,
+        )}&provincia=${encodeURIComponent(provincia)}`,
       );
       const data = await res.json();
 
       if (!Array.isArray(data) || data.length === 0) {
         datosTabla = [];
         columnasTabla = [];
+        paginasPresentacion = [];
         estadoTabla.textContent = "No hay resultados para mostrar.";
         paginacionInfo.textContent = "Sin datos";
         return;
@@ -70,24 +140,36 @@ document.addEventListener("DOMContentLoaded", () => {
       columnasTabla = Object.keys(data[0]).filter(
         (col) => col !== "UltimoControl",
       );
-      paginaActual = 0;
-
       renderTabla();
-      estadoInterval = setInterval(() => {
-        if (!datosTabla.length) return;
-        renderTabla();
-      }, 5000);
       tabla.style.display = "table";
+      iniciarActualizacionEstado();
 
       estadoTabla.textContent = organismo
         ? `Mostrando ${data.length} resultados para "${organismo}".`
         : `Mostrando ${data.length} resultados.`;
+      let mensajeEstado = `Mostrando ${data.length} resultados`;
+      if (organismo && provincia) {
+        mensajeEstado += ` para "${organismo}" en "${provincia}".`;
+      } else if (organismo) {
+        mensajeEstado += ` para "${organismo}".`;
+      } else if (provincia) {
+        mensajeEstado += ` en "${provincia}".`;
+      } else {
+        mensajeEstado += ".";
+      }
+      estadoTabla.textContent = mensajeEstado;
     } catch (error) {
       estadoTabla.textContent = "Error al cargar los datos.";
+      paginacionInfo.textContent = "Error";
       console.error(error);
     }
   });
 
+  /**
+   * Parsea un string de fecha con formato: YYYYMMDDHHMM
+   * @param {string|number} valor
+   * @returns {Date|null}
+   */
   function parseUltimoControl(valor) {
     if (!valor) return null;
 
@@ -103,83 +185,83 @@ document.addEventListener("DOMContentLoaded", () => {
     return new Date(year, month, day, hour, minute);
   }
 
+  /**
+   * Determina el estado visual (OK, Alerta, Desconocido) segun el tiempo desde el ultimo control
+   * @param {string} ultimoControl
+   * @returns {Object} Texto (?, OK, !) y clase
+   */
   function getEstadoControl(ultimoControl) {
     const fechaControl = parseUltimoControl(ultimoControl);
-
-    if (!fechaControl || Number.isNaN(fechaControl.getTime())) {
-      return {
-        texto: "?",
-        clase: "estado-gris",
-      };
-    }
-
     const ahora = new Date();
     const diferenciaMinutos = (ahora - fechaControl) / 60000;
 
-    if (diferenciaMinutos < 10) {
-      return {
-        texto: "OK",
-        clase: "estado-verde",
-      };
+    if (!fechaControl || Number.isNaN(fechaControl.getTime())) {
+      return { texto: "?", clase: "estado-gris" };
+    } else if (diferenciaMinutos < 10) {
+      return { texto: "OK", clase: "estado-verde" };
+    } else {
+      return { texto: "!", clase: "estado-rojo" };
     }
-
-    return {
-      texto: "!",
-      clase: "estado-rojo",
-    };
   }
 
+  /**
+   * Renderiza los datos en la tabla principal de resultados
+   */
   function renderTabla() {
     if (!datosTabla.length) return;
 
     thead.innerHTML = `
-    <tr>
-      ${columnasTabla.map((col) => `<th>${col}</th>`).join("")}
-      <th>Estado</th>
-    </tr>
-  `;
+      <tr>
+        ${columnasTabla.map((col) => `<th>${col}</th>`).join("")}
+        <th>Estado</th>
+      </tr>
+    `;
 
-    let filasVisibles = datosTabla;
-
-    if (modoPresentacion) {
-      const totalPaginas = Math.ceil(datosTabla.length / FILAS_POR_PAGINA);
-      const inicio = paginaActual * FILAS_POR_PAGINA;
-      const fin = inicio + FILAS_POR_PAGINA;
-      filasVisibles = datosTabla.slice(inicio, fin);
-
-      paginacionInfo.textContent = `Página ${paginaActual + 1} de ${totalPaginas} · Registros ${inicio + 1}-${Math.min(fin, datosTabla.length)} de ${datosTabla.length}`;
-    } else {
-      paginacionInfo.textContent = `Mostrando ${datosTabla.length} registros`;
-    }
-
-    tbody.innerHTML = filasVisibles
+    tbody.innerHTML = datosTabla
       .map((fila) => {
         const estado = getEstadoControl(fila.UltimoControl);
 
         return `
-        <tr>
-          ${columnasTabla.map((col) => `<td>${fila[col] ?? ""}</td>`).join("")}
-          <td>
-            <span class="estado-pill ${estado.clase}">${estado.texto}</span>
-          </td>
-        </tr>
-      `;
+          <tr>
+            ${columnasTabla.map((col) => `<td>${fila[col] ?? ""}</td>`).join("")}
+            <td><span class="estado-pill ${estado.clase}">${estado.texto}</span></td>
+          </tr>
+        `;
       })
       .join("");
+
+    paginacionInfo.textContent = `Mostrando ${datosTabla.length} registros`;
   }
 
-  function siguientePagina() {
-    if (!datosTabla.length) return;
-    const totalPaginas = Math.ceil(datosTabla.length / FILAS_POR_PAGINA);
-    paginaActual = (paginaActual + 1) % totalPaginas;
-    renderTabla();
+  /**
+   * Inicia el ciclo de actualizacion periodica del estado de las maquinas
+   */
+  function iniciarActualizacionEstado() {
+    detenerActualizacionEstado();
+    estadoInterval = setInterval(() => {
+      if (!datosTabla.length) return;
+
+      if (modoPresentacion) {
+        renderPresentacion();
+      } else {
+        renderTabla();
+      }
+    }, INTERVALO_MS);
   }
 
-  function iniciarAutoplay() {
-    detenerAutoplay();
-    autoplayInterval = setInterval(siguientePagina, INTERVALO_MS);
+  /**
+   * Detiene el intervalo de actualizacion de estado
+   */
+  function detenerActualizacionEstado() {
+    if (estadoInterval) {
+      clearInterval(estadoInterval);
+      estadoInterval = null;
+    }
   }
 
+  /**
+   * Detiene el cambio automatico de paginas en el modo presentacion
+   */
   function detenerAutoplay() {
     if (autoplayInterval) {
       clearInterval(autoplayInterval);
@@ -187,13 +269,213 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  /**
+   * Agrupa los datos planos por Organismo, Provincia y Cliente para la presentacion
+   * @param {Array} datos
+   * @returns {Object} Mapa anidado de datos
+   * @example
+   * {
+   *  "ILUNION": {
+   *    "Barcelona": {
+   *      "CIPO": [
+   *        { descripcion: "TUNEL CIPO LIMPIO", ultimoControl: "202604071437" },
+   *        { descripcion: "TUNEL CIPO SUCIO", ultimoControl: "0" }
+   *      ],
+   *      "ARTS": [
+   *        { descripcion: "TUNEL HOTEL ARTS", ultimoControl: "202604070948" }
+   *      ]
+   *    },
+   *    "Cadiz": {
+   *      ...
+   *    }
+   *  }
+   * }
+   */
+  function agruparDatos(datos) {
+    const mapa = {};
+
+    datos.forEach((fila) => {
+      const organismo = fila.Organismo || "Sin organismo";
+      const provincia = fila.Provincia || "Sin provincia";
+      const cliente = fila.Cliente || "Sin cliente";
+      const maquina = fila.Descripcion || "Sin descripcion";
+      const ultimoControl = fila.UltimoControl ?? null;
+
+      if (!mapa[organismo]) {
+        mapa[organismo] = {};
+      }
+
+      if (!mapa[organismo][provincia]) {
+        mapa[organismo][provincia] = {};
+      }
+
+      if (!mapa[organismo][provincia][cliente]) {
+        mapa[organismo][provincia][cliente] = [];
+      }
+
+      mapa[organismo][provincia][cliente].push({
+        descripcion: maquina,
+        ultimoControl,
+      });
+    });
+
+    return mapa;
+  }
+
+  /**
+   * Divide los datos agrupados en "paginas" o diapositivas segun el limite de lineas
+   * @param {Array} datos
+   * @returns {Array} Array de paginas para la presentacion
+   */
+  function construirPaginasPresentacion(datos) {
+    const agrupado = agruparDatos(datos);
+    const paginas = [];
+    let paginaActual = [];
+    let lineasActuales = 0;
+
+    Object.keys(agrupado).forEach((organismo) => {
+      const provincias = agrupado[organismo];
+      let organismoPuesto = false;
+
+      Object.keys(provincias).forEach((provincia) => {
+        const clientes = provincias[provincia];
+        let provinciaPuesta = false;
+
+        Object.keys(clientes).forEach((cliente) => {
+          // Calculo de lineas necesarias para este bloque de cliente
+          const maquinas = clientes[cliente];
+          const lineasCliente =
+            (organismoPuesto ? 0 : 1) +
+            (provinciaPuesta ? 0 : 1) +
+            1 +
+            maquinas.length;
+
+          // Si el bloque actual no cabe en la pagina, crear una nueva
+          if (
+            lineasActuales > 0 &&
+            lineasActuales + lineasCliente > MAX_LINEAS_PRESENTACION
+          ) {
+            paginas.push(paginaActual);
+            paginaActual = [];
+            lineasActuales = 0;
+            organismoPuesto = false;
+            provinciaPuesta = false;
+          }
+
+          if (!organismoPuesto) {
+            paginaActual.push({ tipo: "organismo", texto: organismo });
+            lineasActuales += 1;
+            organismoPuesto = true;
+          }
+
+          if (!provinciaPuesta) {
+            paginaActual.push({ tipo: "provincia", texto: provincia });
+            lineasActuales += 1;
+            provinciaPuesta = true;
+          }
+
+          paginaActual.push({ tipo: "cliente", texto: cliente });
+          lineasActuales += 1;
+
+          maquinas.forEach((maquina) => {
+            paginaActual.push({
+              tipo: "maquina",
+              texto: maquina.descripcion,
+              ultimoControl: maquina.ultimoControl,
+            });
+            lineasActuales += 1;
+          });
+        });
+      });
+    });
+
+    if (paginaActual.length) {
+      paginas.push(paginaActual);
+    }
+
+    return paginas;
+  }
+
+  /**
+   * Renderiza la pagina actual del modo presentacion en dos columnas
+   */
+  function renderPresentacion() {
+    if (!paginasPresentacion.length) {
+      presentacionLista.innerHTML = "<p>No hay datos para presentar.</p>";
+      paginacionInfo.textContent = "Sin datos";
+      return;
+    }
+
+    const pagina = paginasPresentacion[paginaPresentacionActual];
+    const mitad = Math.ceil(pagina.length / 2);
+    const columna1 = pagina.slice(0, mitad);
+    const columna2 = pagina.slice(mitad);
+
+    presentacionLista.style.display = "grid";
+    presentacionLista.innerHTML = `
+      <div class="presentacion-columna">
+        ${columna1.map(renderLineaPresentacion).join("")}
+      </div>
+      <div class="presentacion-columna">
+        ${columna2.map(renderLineaPresentacion).join("")}
+      </div>
+    `;
+
+    paginacionInfo.textContent = `Pagina ${paginaPresentacionActual + 1} de ${paginasPresentacion.length}`;
+  }
+
+  /**
+   * Genera el HTML para una linea individual de la presentacion
+   * @param {Object} item
+   * @returns {string} Fragmento HTML
+   */
+  function renderLineaPresentacion(item) {
+    if (item.tipo === "organismo") {
+      return `<div class="linea-organismo">${escapeHtml(item.texto)}</div>`;
+    }
+
+    if (item.tipo === "provincia") {
+      return `<div class="linea-provincia">${escapeHtml(item.texto)}</div>`;
+    }
+
+    if (item.tipo === "cliente") {
+      return `<div class="linea-cliente">${escapeHtml(item.texto)}</div>`;
+    }
+
+    const estado = getEstadoControl(item.ultimoControl);
+    return `
+      <div class="linea-maquina ${estado.clase}">
+        ${escapeHtml(item.texto)}
+      </div>
+    `;
+  }
+
+  /**
+   * Avanza a la siguiente pagina de la presentacion de forma circular
+   */
+  function siguientePaginaPresentacion() {
+    if (!paginasPresentacion.length) return;
+    paginaPresentacionActual =
+      (paginaPresentacionActual + 1) % paginasPresentacion.length;
+    renderPresentacion();
+  }
+
+  /**
+   * Activa el modo presentacion y solicita pantalla completa
+   */
   modoPresentacionBtn.addEventListener("click", async () => {
     if (!datosTabla.length) return;
 
     try {
       modoPresentacion = true;
-      paginaActual = 0;
-      renderTabla();
+      paginasPresentacion = construirPaginasPresentacion(datosTabla);
+      paginaPresentacionActual = 0;
+
+      tablaWrapper.hidden = true;
+      tabla.hidden = true;
+      presentacionLista.hidden = false;
+
+      renderPresentacion();
 
       if (!document.fullscreenElement) {
         await tablaSection.requestFullscreen();
@@ -202,12 +484,17 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.classList.add("modo-presentacion");
       modoPresentacionBtn.style.display = "none";
       salirPresentacionBtn.style.display = "inline-flex";
-      iniciarAutoplay();
+
+      detenerAutoplay();
+      autoplayInterval = setInterval(siguientePaginaPresentacion, INTERVALO_MS);
     } catch (error) {
       console.error("No se pudo activar pantalla completa", error);
     }
   });
 
+  /**
+   * Sale del modo presentacion y sale de pantalla completa si aplica
+   */
   salirPresentacionBtn.addEventListener("click", async () => {
     salirModoPresentacion();
 
@@ -216,18 +503,43 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  /**
+   * Restablece la interfaz al estado normal de tabla
+   */
   function salirModoPresentacion() {
     modoPresentacion = false;
     detenerAutoplay();
+
+    presentacionLista.hidden = true;
+    tablaWrapper.hidden = false;
+    tabla.hidden = false;
+
     document.body.classList.remove("modo-presentacion");
     modoPresentacionBtn.style.display = "inline-flex";
     salirPresentacionBtn.style.display = "none";
+    presentacionLista.style.display = "none";
+
     renderTabla();
   }
 
+  // Detectar cambios en pantalla completa (como presionar ESC) para sincronizar el estado
   document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement) {
       salirModoPresentacion();
     }
   });
+
+  /**
+   * Reemplaza caracteres especiales en un texto para evitar problemas al renderizar HTML
+   * @param {string} texto
+   * @returns {string} Texto con caracteres formateados
+   */
+  function escapeHtml(texto) {
+    return String(texto)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
 });

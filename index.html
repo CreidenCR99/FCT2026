@@ -3,49 +3,59 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maquinas y Organismos</title>
+    <title>Control de máquinas</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <form id="form">
-      <h1>Filtro por organismo</h1>
+    <main>
+      <form id="form">
+        <h1>Control de máquinas</h1>
 
-      <div class="form-control">
-        <label for="organismo">Organismo</label>
-        <select id="organismo" name="organismo">
-          <option value="">Cargando organismos...</option>
-        </select>
-      </div>
-
-      <div class="botones">
-        <button type="submit">Buscar</button>
-      </div>
-    </form>
-
-    <section class="tabla-section" id="tablaSection">
-      <div class="tabla-header">
-        <h2>Resultados</h2>
-
-        <div class="tabla-acciones">
-          <span id="paginacionInfo">Sin datos</span>
-          <button type="button" id="modoPresentacionBtn">
-            Pantalla completa
-          </button>
-          <button type="button" id="salirPresentacionBtn" style="display: none">
-            Salir
-          </button>
+        <div class="form-control">
+          <label for="organismo">Organismo</label>
+          <select id="organismo" name="organismo">
+            <option value="">Todos los organismos</option>
+          </select>
         </div>
-      </div>
 
-      <div id="estadoTabla">Selecciona un organismo y pulsa “Buscar”.</div>
+        <div class="form-control">
+          <label for="provincia">Provincia</label>
+          <select id="provincia" name="provincia">
+            <option value="">Todas las provincias</option>
+          </select>
+        </div>
 
-      <div class="tabla-wrapper" id="tablaWrapper">
-        <table id="tablaDatos" style="display: none">
-          <thead></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
+        <div class="botones">
+          <button type="button" id="limpiarFiltrosBtn">Limpiar</button>
+          <button type="submit">Buscar</button>
+        </div>
+      </form>
+
+      <section class="tabla-section" id="tablaSection">
+        <div class="tabla-header">
+          <h2>Resultados</h2>
+
+          <div class="tabla-acciones">
+            <span id="paginacionInfo"></span>
+            <button type="button" id="modoPresentacionBtn">Pantalla completa</button>
+            <button type="button" id="salirPresentacionBtn" style="display: none">Salir</button>
+          </div>
+        </div>
+
+        <div id="estadoTabla">
+          Selecciona un organismo o provincia y pulsa "Buscar".
+        </div>
+
+        <div class="tabla-wrapper" id="tablaWrapper">
+          <table id="tablaDatos" style="display: none">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div id="presentacionLista" class="presentacion-lista" hidden></div>
+      </section>
+    </main>
 
     <script src="script.js"></script>
   </body>

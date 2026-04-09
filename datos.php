@@ -47,21 +47,15 @@ if ($modo === 'organismos') {
     exit;
 }
 
-if ($modo === 'maquinas') {
+if ($modo === 'provincias') {
     $organismo = trim($_GET['organismo'] ?? '');
-
-    $sql = "SELECT
-                o.Nombre AS Organismo,
-                p.Nombre AS Provincia,
-                ISNULL(c.Nombre, 'error') AS Cliente,
-                m.Descripcion,
-                m.UltimoControl
+    $sql = "SELECT DISTINCT p.Nombre AS Provincia
             FROM Maquinas m
-            LEFT JOIN Organismos o ON o.codigo = m.organismo
             LEFT JOIN Provincias p ON p.codigo = m.provincia
-            LEFT JOIN Clientes c ON c.codigo = m.cliente
-            WHERE (? = '' OR o.Nombre = ?)
-            ORDER BY o.Nombre, p.Nombre, c.Nombre, m.Descripcion";
+            LEFT JOIN Organismos o ON o.codigo = m.organismo
+            WHERE p.Nombre IS NOT NULL
+              AND (? = '' OR o.Nombre = ?)
+            ORDER BY p.Nombre";
 
     $params = array($organismo, $organismo);
     $stmt = sqlsrv_query($conn, $sql, $params);
@@ -83,6 +77,44 @@ if ($modo === 'maquinas') {
     exit;
 }
 
-echo json_encode(["error" => "Modo no válido"]);
+if ($modo === 'maquinas') {
+    $organismo = trim($_GET['organismo'] ?? '');
+    $provincia = trim($_GET['provincia'] ?? '');
+
+    $sql = "SELECT
+                o.Nombre AS Organismo,
+                p.Nombre AS Provincia,
+                ISNULL(c.Nombre, 'error') AS Cliente,
+                m.Descripcion,
+                m.UltimoControl
+            FROM Maquinas m
+            LEFT JOIN Organismos o ON o.codigo = m.organismo
+            LEFT JOIN Provincias p ON p.codigo = m.provincia
+            LEFT JOIN Clientes c ON c.codigo = m.cliente
+            WHERE (? = '' OR o.Nombre = ?)
+              AND (? = '' OR p.Nombre = ?)
+            ORDER BY o.Nombre, p.Nombre, c.Nombre, m.Descripcion";
+
+    $params = array($organismo, $organismo, $provincia, $provincia);
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+
+    $data = [];
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $data[] = $row;
+    }
+
+    echo json_encode($data);
+    sqlsrv_free_stmt($stmt);
+    sqlsrv_close($conn);
+    exit;
+}
+
+echo json_encode(["error" => "Modo no valido"]);
 sqlsrv_close($conn);
 ?>
