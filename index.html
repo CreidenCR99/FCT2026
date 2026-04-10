@@ -1,10 +1,11 @@
 <!doctype html>
 <html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Adrián Cuervo">
     <title>Control de máquinas</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
     <main>
@@ -34,7 +35,7 @@
       <section class="tabla-section" id="tablaSection">
         <div class="tabla-header">
           <h2>Resultados</h2>
-
+          <div id="indicadorReproduccion" class="indicador-reproduccion"></div>
           <div class="tabla-acciones">
             <span id="paginacionInfo"></span>
             <button type="button" id="modoPresentacionBtn">Pantalla completa</button>
@@ -56,6 +57,8 @@
         <div id="presentacionLista" class="presentacion-lista" hidden></div>
       </section>
     </main>
+
+    <button id="backToTop" class="back-to-top" title="Volver arriba">↑</button>
 
     <script src="script.js"></script>
   </body>

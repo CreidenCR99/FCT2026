@@ -14,10 +14,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const limpiarFiltrosBtn = document.getElementById("limpiarFiltrosBtn");
   const salirPresentacionBtn = document.getElementById("salirPresentacionBtn");
   const presentacionLista = document.getElementById("presentacionLista");
+  const indicadorReproduccion = document.getElementById("indicadorReproduccion");
+  const backToTopBtn = document.getElementById("backToTop");
 
   // --- Constantes de Configuracion ---
-  const INTERVALO_MS = 5000;
-  const MAX_LINEAS_PRESENTACION = 21;
+  const INTERVALO_MS = 7500;
+  let maxLineasPresentacion = 20;
 
   // --- Estado Global de la Aplicacion ---
   let datosTabla = [];
@@ -27,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let modoPresentacion = false;
   let paginasPresentacion = [];
   let paginaPresentacionActual = 0;
+  let estaPausado = false;
 
   // Inicializacion
   cargarOrganismos();
@@ -99,6 +102,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarProvincias(""); // Recargar todas las provincias
   });
 
+  // Variable para almacenar los filtros actuales
+  let filtroOrganismo = "";
+  let filtroProvincia = "";
+
   /**
    * Maneja el envio del formulario para buscar y mostrar datos
    */
@@ -108,52 +115,81 @@ document.addEventListener("DOMContentLoaded", () => {
     const organismo = selectOrganismo.value;
     const provincia = selectProvincia.value;
 
+    // Guardar los filtros actuales
+    filtroOrganismo = organismo;
+    filtroProvincia = provincia;
+
     estadoTabla.textContent = "Cargando resultados...";
     thead.innerHTML = "";
     tbody.innerHTML = "";
     tabla.style.display = "none";
     presentacionLista.hidden = true;
     presentacionLista.innerHTML = "";
+    columnasTabla = []; // Resetear columnas para una nueva carga
 
     // Detener procesos activos antes de una nueva carga
     detenerAutoplay();
     detenerActualizacionEstado();
 
+    await fetchAndRenderData(); // Realizar la carga inicial
+    iniciarActualizacionEstado(); // Iniciar la actualización periódica
+  });
+
+  /**
+   * Calcula dinámicamente el número de líneas permitidas en la presentación según la altura.
+   * Dividimos la altura por un factor (54) para que en 1080p haya 20 líneas.
+   * El resultado se limita entre 20 y 36 líneas totales (10-18 por columna).
+   */
+  function calcularMaxLineas() {
+    const calculo = Math.floor(window.innerHeight / 54);
+    maxLineasPresentacion = Math.min(36, Math.max(20, calculo));
+  }
+
+  /**
+   * Obtiene los datos de las máquinas del servidor y los renderiza.
+   */
+  async function fetchAndRenderData() {
+
     try {
       const res = await fetch(
-        `datos.php?modo=maquinas&organismo=${encodeURIComponent(
-          organismo,
-        )}&provincia=${encodeURIComponent(provincia)}`,
+        `datos.php?modo=maquinas&organismo=${encodeURIComponent(filtroOrganismo)}&provincia=${encodeURIComponent(filtroProvincia)}`,
       );
       const data = await res.json();
 
-      if (!Array.isArray(data) || data.length === 0) {
-        datosTabla = [];
-        columnasTabla = [];
-        paginasPresentacion = [];
-        estadoTabla.textContent = "No hay resultados para mostrar.";
-        paginacionInfo.textContent = "Sin datos";
-        return;
+      datosTabla = data;
+
+      // Solo establecer las columnas si hay datos y no se han definido antes
+      if (data.length > 0 && columnasTabla.length === 0) {
+        columnasTabla = Object.keys(data[0]).filter(
+          (col) =>
+            col !== "UltimoControl" && col !== "MonitorizarEstado" &&
+            col !== "NumeroSerie" && col !== "MonitorizarAlertas" &&
+            col !== "Logs",
+        );
+      } else if (data.length === 0) {
+          columnasTabla = []; // Limpiar columnas si no hay datos
       }
 
-      datosTabla = data;
-      columnasTabla = Object.keys(data[0]).filter(
-        (col) => col !== "UltimoControl",
-      );
-      renderTabla();
-      tabla.style.display = "table";
-      iniciarActualizacionEstado();
+      if (modoPresentacion) {
+        calcularMaxLineas();
+        paginasPresentacion = construirPaginasPresentacion(datosTabla);
+        // Asegurarse de que la página actual sea válida después de una actualización de datos
+        if (paginaPresentacionActual >= paginasPresentacion.length) {
+            paginaPresentacionActual = 0;
+        }
+        renderPresentacion();
+      } else {
+        renderTabla();
+        tabla.style.display = "table"; // Asegurarse de que la tabla sea visible
+      }
 
-      estadoTabla.textContent = organismo
-        ? `Mostrando ${data.length} resultados para "${organismo}".`
-        : `Mostrando ${data.length} resultados.`;
-      let mensajeEstado = `Mostrando ${data.length} resultados`;
-      if (organismo && provincia) {
-        mensajeEstado += ` para "${organismo}" en "${provincia}".`;
-      } else if (organismo) {
-        mensajeEstado += ` para "${organismo}".`;
-      } else if (provincia) {
-        mensajeEstado += ` en "${provincia}".`;
+      let mensajeEstado = `Hay un total de ${data.length} resultados`;
+      if (filtroOrganismo && filtroProvincia) {
+        mensajeEstado += ` para "${filtroOrganismo}" en "${filtroProvincia}".`;
+      } else if (filtroOrganismo) {
+        mensajeEstado += ` para "${filtroOrganismo}".`;
+      } else if (filtroProvincia) {
+        mensajeEstado += ` en "${filtroProvincia}".`;
       } else {
         mensajeEstado += ".";
       }
@@ -161,9 +197,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       estadoTabla.textContent = "Error al cargar los datos.";
       paginacionInfo.textContent = "Error";
-      console.error(error);
+      console.error("Error al actualizar datos:", error);
     }
-  });
+  }
 
   /**
    * Parsea un string de fecha con formato: YYYYMMDDHHMM
@@ -186,12 +222,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Determina el estado visual (OK, Alerta, Desconocido) segun el tiempo desde el ultimo control
-   * @param {string} ultimoControl
-   * @returns {Object} Texto (?, OK, !) y clase
+   * Determina el estado visual (OK, Alerta, Log, Desconocido) segun el tiempo desde el ultimo control o si tiene logs
+   * @param {Object} fila Objeto con los datos de la máquina
+   * @returns {Object} Texto (?, LOG, OK, !) y clase
    */
-  function getEstadoControl(ultimoControl) {
-    const fechaControl = parseUltimoControl(ultimoControl);
+  function getEstadoControl(fila) {
+    // Prioridad: MonitorizarAlertas en false (o 0) significa alerta activa
+    if (esFalso(fila.MonitorizarAlertas)) {
+      return { texto: "LOG", clase: "estado-naranja" };
+    }
+
+    const fechaControl = parseUltimoControl(fila.UltimoControl);
     const ahora = new Date();
     const diferenciaMinutos = (ahora - fechaControl) / 60000;
 
@@ -205,10 +246,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
+   * Helper para comprobar si un valor booleano en string es falso
+   */
+  function esFalso(valor) {
+    if (valor === null || typeof valor === 'undefined') return true;
+    if (typeof valor === 'boolean') return !valor;
+    const v = String(valor).trim().toLowerCase();
+    // Considerar "0", "false", "null", "undefined", y cadenas vacías como falso
+    return v === "0" || v === "false" || v === "null" || v === "undefined" || v === "";
+  }
+
+  /**
    * Renderiza los datos en la tabla principal de resultados
    */
   function renderTabla() {
-    if (!datosTabla.length) return;
+    const datosFiltrados = datosTabla.filter(f => !esFalso(f.MonitorizarEstado));
+    if (!datosFiltrados.length) return;
 
     thead.innerHTML = `
       <tr>
@@ -217,9 +270,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </tr>
     `;
 
-    tbody.innerHTML = datosTabla
+    tbody.innerHTML = datosFiltrados
       .map((fila) => {
-        const estado = getEstadoControl(fila.UltimoControl);
+        const estado = getEstadoControl(fila);
 
         return `
           <tr>
@@ -230,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
 
-    paginacionInfo.textContent = `Mostrando ${datosTabla.length} registros`;
+    paginacionInfo.textContent = `Mostrando ${datosFiltrados.length} registros`;
   }
 
   /**
@@ -239,13 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function iniciarActualizacionEstado() {
     detenerActualizacionEstado();
     estadoInterval = setInterval(() => {
-      if (!datosTabla.length) return;
-
-      if (modoPresentacion) {
-        renderPresentacion();
-      } else {
-        renderTabla();
-      }
+      fetchAndRenderData(); // Ahora el intervalo llama a la función que también obtiene los datos
     }, INTERVALO_MS);
   }
 
@@ -294,12 +341,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function agruparDatos(datos) {
     const mapa = {};
 
-    datos.forEach((fila) => {
+    // Solo agrupamos máquinas que deben monitorizar su estado general
+    const datosFiltrados = datos.filter(f => !esFalso(f.MonitorizarEstado));
+
+    datosFiltrados.forEach((fila) => {
       const organismo = fila.Organismo || "Sin organismo";
       const provincia = fila.Provincia || "Sin provincia";
       const cliente = fila.Cliente || "Sin cliente";
       const maquina = fila.Descripcion || "Sin descripcion";
       const ultimoControl = fila.UltimoControl ?? null;
+      const logs = fila.Logs ?? []; // Obtener el array de logs
 
       if (!mapa[organismo]) {
         mapa[organismo] = {};
@@ -316,6 +367,8 @@ document.addEventListener("DOMContentLoaded", () => {
       mapa[organismo][provincia][cliente].push({
         descripcion: maquina,
         ultimoControl,
+        logs, // Pasar el array de logs
+        MonitorizarAlertas: fila.MonitorizarAlertas,
       });
     });
 
@@ -353,7 +406,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Si el bloque actual no cabe en la pagina, crear una nueva
           if (
             lineasActuales > 0 &&
-            lineasActuales + lineasCliente > MAX_LINEAS_PRESENTACION
+            lineasActuales + lineasCliente > maxLineasPresentacion
           ) {
             paginas.push(paginaActual);
             paginaActual = [];
@@ -382,6 +435,8 @@ document.addEventListener("DOMContentLoaded", () => {
               tipo: "maquina",
               texto: maquina.descripcion,
               ultimoControl: maquina.ultimoControl,
+              logs: maquina.logs, // Pasar el array de logs
+              MonitorizarAlertas: maquina.MonitorizarAlertas,
             });
             lineasActuales += 1;
           });
@@ -406,10 +461,42 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Máquinas con alertas activas: MonitorizarAlertas es false (0)
+    const maquinasConErroresActivos = datosTabla.filter(m => esFalso(m.MonitorizarAlertas));
+
+    // Aplanar los errores para mostrarlos, asociando cada mensaje de log con su máquina
+    const erroresParaMostrar = [];
+    maquinasConErroresActivos.forEach(m => {
+      const logsFallo = m.Logs.filter(log => esFalso(log.ResultadoCorrecto));
+      
+      if (logsFallo.length === 0) {
+        // Si tiene la alerta activa pero no hay logs de fallo (o no hay logs), mostrar error desconocido
+        erroresParaMostrar.push({
+          descripcion: m.Descripcion,
+          mensaje: "Error desconocido"
+        });
+      } else {
+        logsFallo.forEach(log => {
+          erroresParaMostrar.push({
+            descripcion: m.Descripcion,
+            mensaje: log.Mensaje
+          });
+        });
+      }
+    });
+
+    const ERR_POR_PAGINA = 8;
+    const paginasErrores = Math.ceil(erroresParaMostrar.length / ERR_POR_PAGINA) || 1;
+    const paginaErrorActual = paginaPresentacionActual % paginasErrores;
+    const erroresAMostrarEnPagina = erroresParaMostrar.slice(paginaErrorActual * ERR_POR_PAGINA, (paginaErrorActual + 1) * ERR_POR_PAGINA);
+
     const pagina = paginasPresentacion[paginaPresentacionActual];
     const mitad = Math.ceil(pagina.length / 2);
     const columna1 = pagina.slice(0, mitad);
     const columna2 = pagina.slice(mitad);
+
+    const errCol1 = erroresAMostrarEnPagina.slice(0, 4);
+    const errCol2 = erroresAMostrarEnPagina.slice(4);
 
     presentacionLista.style.display = "grid";
     presentacionLista.innerHTML = `
@@ -418,6 +505,27 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
       <div class="presentacion-columna">
         ${columna2.map(renderLineaPresentacion).join("")}
+      </div>
+      <div class="presentacion-errores-footer">
+        ${erroresParaMostrar.length > 0 ? `
+          <div class="presentacion-errores-titulo">MÁQUINAS CON ERRORES DE ACTUALIZACIÓN (${erroresParaMostrar.length}) ${paginasErrores > 1 ? `(Pág. ${paginaErrorActual + 1}/${paginasErrores})` : ""}</div>
+          <div class="presentacion-errores-columnas">
+            <div class="presentacion-columna-errores">
+              ${errCol1.map(m => `
+                <div class="presentacion-error-item">
+                  <strong style="color: #f58a07;">${escapeHtml(m.descripcion)}:</strong> ${escapeHtml(m.mensaje)}
+                </div>
+              `).join("")}
+            </div>
+            <div class="presentacion-columna-errores">
+              ${errCol2.map(m => `
+                <div class="presentacion-error-item">
+                  <strong style="color: #f58a07;">${escapeHtml(m.descripcion)}:</strong> ${escapeHtml(m.mensaje)}
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        ` : ""}
       </div>
     `;
 
@@ -442,7 +550,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return `<div class="linea-cliente">${escapeHtml(item.texto)}</div>`;
     }
 
-    const estado = getEstadoControl(item.ultimoControl);
+    const estado = getEstadoControl({
+      UltimoControl: item.ultimoControl,
+      Logs: item.logs, // Pasar el array de logs
+      MonitorizarAlertas: item.MonitorizarAlertas
+    });
     return `
       <div class="linea-maquina ${estado.clase}">
         ${escapeHtml(item.texto)}
@@ -461,15 +573,43 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
+   * Retrocede a la pagina anterior de la presentacion de forma circular
+   */
+  function anteriorPaginaPresentacion() {
+    if (!paginasPresentacion.length) return;
+    paginaPresentacionActual =
+      (paginaPresentacionActual - 1 + paginasPresentacion.length) % paginasPresentacion.length;
+    renderPresentacion();
+  }
+
+  /**
+   * Reinicia el intervalo de la presentacion si no esta pausado
+   */
+  function reiniciarAutoplay() {
+    detenerAutoplay();
+    if (!estaPausado && modoPresentacion) {
+      autoplayInterval = setInterval(siguientePaginaPresentacion, INTERVALO_MS);
+    }
+    actualizarIndicadorPausa();
+  }
+
+  /**
    * Activa el modo presentacion y solicita pantalla completa
    */
   modoPresentacionBtn.addEventListener("click", async () => {
-    if (!datosTabla.length) return;
+    if (datosTabla.length === 0) {
+      // Si no hay datos cargados, ejecutamos una búsqueda general sin filtros
+      await fetchAndRenderData();
+      if (datosTabla.length === 0) return;
+      iniciarActualizacionEstado();
+    }
 
     try {
       modoPresentacion = true;
+      calcularMaxLineas();
       paginasPresentacion = construirPaginasPresentacion(datosTabla);
       paginaPresentacionActual = 0;
+      estaPausado = false;
 
       tablaWrapper.hidden = true;
       tabla.hidden = true;
@@ -485,8 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
       modoPresentacionBtn.style.display = "none";
       salirPresentacionBtn.style.display = "inline-flex";
 
-      detenerAutoplay();
-      autoplayInterval = setInterval(siguientePaginaPresentacion, INTERVALO_MS);
+      reiniciarAutoplay();
     } catch (error) {
       console.error("No se pudo activar pantalla completa", error);
     }
@@ -509,6 +648,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function salirModoPresentacion() {
     modoPresentacion = false;
     detenerAutoplay();
+    estaPausado = false;
 
     presentacionLista.hidden = true;
     tablaWrapper.hidden = false;
@@ -518,15 +658,72 @@ document.addEventListener("DOMContentLoaded", () => {
     modoPresentacionBtn.style.display = "inline-flex";
     salirPresentacionBtn.style.display = "none";
     presentacionLista.style.display = "none";
+    indicadorReproduccion.style.display = "none";
 
     renderTabla();
+  }
+
+  /**
+   * Actualiza el indicador visual de Play/Pause
+   */
+  function actualizarIndicadorPausa() {
+    if (!modoPresentacion) return;
+    indicadorReproduccion.textContent = estaPausado ? "⏸" : "";
+    indicadorReproduccion.style.display = "block";
   }
 
   // Detectar cambios en pantalla completa (como presionar ESC) para sincronizar el estado
   document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement) {
       salirModoPresentacion();
+    } else if (modoPresentacion) {
+      // Recalcular layout al entrar en pantalla completa o cambiar orientación
+      calcularMaxLineas();
+      paginasPresentacion = construirPaginasPresentacion(datosTabla);
+      renderPresentacion();
     }
+  });
+
+  // Atajos de teclado para el modo presentacion
+  document.addEventListener("keydown", (e) => {
+    if (!modoPresentacion) return;
+
+    if (e.code === "Space") {
+      e.preventDefault(); // Evitar que la pagina haga scroll
+      estaPausado = !estaPausado;
+      reiniciarAutoplay();
+    } else if (e.code === "ArrowRight") {
+      estaPausado = false; // Al navegar manualmente, reanudamos la reproduccion
+      siguientePaginaPresentacion();
+      reiniciarAutoplay();
+    } else if (e.code === "ArrowLeft") {
+      estaPausado = false;
+      anteriorPaginaPresentacion();
+      reiniciarAutoplay();
+    }
+  });
+
+  // Recalcular si el usuario cambia el tamaño de la ventana manualmente
+  window.addEventListener("resize", () => {
+    if (modoPresentacion) {
+      calcularMaxLineas();
+      paginasPresentacion = construirPaginasPresentacion(datosTabla);
+      renderPresentacion();
+    }
+  });
+
+  // Mostrar/ocultar botón de volver arriba según el scroll
+  window.addEventListener("scroll", () => {
+    if (!modoPresentacion && window.scrollY > 300) {
+      backToTopBtn.classList.add("visible");
+    } else {
+      backToTopBtn.classList.remove("visible");
+    }
+  });
+
+  // Acción de volver arriba al hacer clic
+  backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   /**
