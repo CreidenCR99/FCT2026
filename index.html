@@ -1,65 +1,183 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="light">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="author" content="Adrián Cuervo">
-    <title>Control de máquinas</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--Favicon en jpg-->
+    <link rel="icon" type="image/x-icon" href="favicon.jpg" />
+    <title>SicoLares - Control de máquinas</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- Punto de entrada principal como módulo -->
+    <script src="js/main.js" type="module"></script>
   </head>
   <body>
-    <main>
-      <form id="form">
-        <h1>Control de máquinas</h1>
+    <a href="#contenido-principal" class="skip-link">Saltar al contenido</a>
+    <main id="contenido-principal">
 
-        <div class="form-control">
-          <label for="organismo">Organismo</label>
-          <select id="organismo" name="organismo">
-            <option value="">Todos los organismos</option>
-          </select>
-        </div>
-
-        <div class="form-control">
-          <label for="provincia">Provincia</label>
-          <select id="provincia" name="provincia">
-            <option value="">Todas las provincias</option>
-          </select>
-        </div>
-
-        <div class="botones">
-          <button type="button" id="limpiarFiltrosBtn">Limpiar</button>
-          <button type="submit">Buscar</button>
-        </div>
-      </form>
-
-      <section class="tabla-section" id="tablaSection">
-        <div class="tabla-header">
-          <h2>Resultados</h2>
-          <div id="indicadorReproduccion" class="indicador-reproduccion"></div>
-          <div class="tabla-acciones">
-            <span id="paginacionInfo"></span>
-            <button type="button" id="modoPresentacionBtn">Pantalla completa</button>
-            <button type="button" id="salirPresentacionBtn" style="display: none">Salir</button>
+        <!-- Modal de edición de Log — Movido aquí para que sea visible en Fullscreen -->
+        <div id="modalLog" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>Detalles del Error</h2>
+              <button type="button" id="cerrarModalBtn" class="btn-icon" aria-label="Cerrar modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="info-maquina">
+                <p><strong>Organismo:</strong> <span id="modalOrganismo"></span></p>
+                <p><strong>Provincia:</strong> <span id="modalProvincia"></span></p>
+                <p><strong>Cliente:</strong> <span id="modalCliente"></span></p>
+                <p><strong>Máquina:</strong> <span id="modalMaquinaDesc"></span></p>
+                <p><strong>Número de Serie:</strong> <span id="modalMaquinaSN"></span></p>
+                <p><strong>Error Original:</strong> <span id="modalErrorMsg"></span></p>
+              </div>
+              <form id="formEdicionLog">
+                <input type="hidden" id="modalLogId" name="id_log">
+                <div class="form-control" style="margin-bottom: 15px;">
+                  <label for="modalEstadoError">Estado del error</label>
+                  <select id="modalEstadoError" name="estadoerror">
+                    <option value="1">Solucionado (True)</option>
+                    <option value="0">Sin solucionar (False)</option>
+                  </select>
+                </div>
+                <div class="form-control" style="margin-bottom: 20px;">
+                  <label for="modalObservaciones">Observaciones</label>
+                  <textarea id="modalObservaciones" name="observaciones" rows="3" placeholder="Escribe aquí las observaciones..."></textarea>
+                </div>
+                <div class="botones">
+                  <button type="button" id="cancelarEdicionBtn" class="btn-secondary">Cancelar</button>
+                  <button type="submit" class="btn-primary">Enviar</button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
 
-        <div id="estadoTabla">
-          Selecciona un organismo o provincia y pulsa "Buscar".
+      <form id="form" novalidate>
+        <div class="form-header">
+          <h1>
+            <svg class="logo-icon" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <rect width="32" height="32" rx="6" fill="var(--primary)"/>
+              <rect x="6" y="8" width="20" height="13" rx="2" stroke="white" stroke-width="2"/>
+              <rect x="14" y="21" width="4" height="3" fill="white"/>
+              <rect x="11" y="24" width="10" height="2" rx="1" fill="white"/>
+              <circle cx="24" cy="10" r="5" fill="#ff3b30"/>
+            </svg>
+            Control de máquinas
+          </h1>
+          <button type="button" id="themeToggle" class="btn-icon" aria-label="Cambiar a modo oscuro"></button>
         </div>
 
+        <div class="form-grid">
+          <div class="form-control">
+            <label for="organismo">Organismo</label>
+            <select id="organismo" name="organismo">
+              <option value="">Todos los organismos</option>
+            </select>
+          </div>
+          <div class="form-control">
+            <label for="provincia">Provincia</label>
+            <select id="provincia" name="provincia">
+              <option value="">Todas las provincias</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="botones">
+          <button type="button" id="limpiarFiltrosBtn" class="btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" aria-hidden="true">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+            </svg>
+            Limpiar filtros
+          </button>
+          <button type="submit" class="btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      <section class="tabla-section" id="tablaSection" aria-label="Resultados de máquinas">
+
+        <!-- Barra de progreso de refresco automático -->
+        <div class="progress-bar-container" aria-hidden="true">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <!-- Cabecera de la tabla -->
+        <div class="tabla-header">
+          <div class="logo-fullscreen" aria-hidden="true">
+            <img src="logo.jpg" alt="Logo SicoLares">
+          </div>
+          <h2 id="tabla-titulo">Resultados</h2>
+          <div id="indicadorReproduccion" class="indicador-reproduccion" aria-live="polite"></div>
+          <div class="tabla-acciones">
+            <input
+              type="search"
+              id="searchInput"
+              class="search-input"
+              placeholder="Buscar máquina…"
+              aria-label="Buscar entre los resultados"
+            />
+            <button type="button" id="exportCsvBtn" class="btn-secondary btn-small"
+                    aria-label="Exportar resultados como CSV">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              CSV
+            </button>
+            <span id="paginacionInfo" aria-live="polite"></span>
+            <button type="button" id="modoPresentacionBtn" class="btn-primary">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+              Pantalla completa
+            </button>
+            <button type="button" id="salirPresentacionBtn" class="btn-secondary"
+                    style="display:none" aria-label="Salir del modo presentación">
+              <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" aria-hidden="true">
+                <path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h3M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M12 8l-4 4 4 4M8 12h13"/>
+              </svg>
+              Salir
+            </button>
+          </div>
+        </div>
+        
+        <p id="estadoTabla" aria-live="polite">
+          Selecciona un organismo o provincia y pulsa "Buscar".
+        </p>
+        
+        <!-- KPI cards — dentro de tablaSection para que sean visibles en pantalla completa -->
+        <div id="kpiSection" class="kpi-section" hidden aria-label="Resumen de estado"></div>
+
+        <div id="logsNormalSection" class="logs-normal-section" hidden aria-label="Errores activos"></div>
+
+        <br>
+
         <div class="tabla-wrapper" id="tablaWrapper">
-          <table id="tablaDatos" style="display: none">
+          <table id="tablaDatos" style="display:none" role="grid" aria-label="Lista de máquinas">
             <thead></thead>
             <tbody></tbody>
           </table>
         </div>
 
-        <div id="presentacionLista" class="presentacion-lista" hidden></div>
+        <div id="presentacionLista" class="presentacion-lista" hidden aria-live="polite"></div>
+
       </section>
     </main>
 
-    <button id="backToTop" class="back-to-top" title="Volver arriba">↑</button>
-
-    <script src="script.js"></script>
+    <!-- Botón volver arriba -->
+    <button id="backToTop" class="btn-back-to-top" aria-label="Volver arriba">↑</button>
+    
   </body>
 </html>

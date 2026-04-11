@@ -3,11 +3,25 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 header("Content-Type: application/json; charset=UTF-8");
 
-$serverName = "";
+// Función simple para cargar .env
+function loadEnv($path) {
+    if (!file_exists($path)) return;
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        list($name, $value) = explode('=', $line, 2);
+        $_ENV[trim($name)] = trim($value);
+        putenv(trim($name) . "=" . trim($value));
+    }
+}
+
+loadEnv(__DIR__ . '/.env');
+
+$serverName = getenv('DB_SERVER');
 $connectionInfo = array(
-    "Database" => "",
-    "UID" => "",
-    "PWD" => "",
+    "Database" => getenv('DB_DATABASE'),
+    "UID" => getenv('DB_USER'),
+    "PWD" => getenv('DB_PASS'),
     "CharacterSet" => "UTF-8"
 );
 
@@ -129,7 +143,8 @@ if ($modo === 'maquinas') {
                     Numero_Serie,
                     Mensaje,
                     ResultadoCorrecto,
-                    ID
+                    ID,
+                    Observaciones
                 FROM Log_Actualizaciones
                 WHERE Numero_Serie IN ($placeholders)
                 ORDER BY Numero_Serie, ID DESC";
@@ -148,8 +163,6 @@ if ($modo === 'maquinas') {
         if (!isset($logsByNumeroSerie[$ns])) {
             $logsByNumeroSerie[$ns] = [];
         }
-        unset($logRow['Numero_Serie']); // Remove Numero_Serie from log entry
-        unset($logRow['ID']); // Remove ID from log entry
         $logsByNumeroSerie[$ns][] = $logRow;
     }
     sqlsrv_free_stmt($stmtLogs);
@@ -161,6 +174,36 @@ if ($modo === 'maquinas') {
     unset($machine); // Break the reference
 
     echo json_encode($machines);
+    sqlsrv_close($conn);
+    exit;
+}
+
+if ($modo === 'actualizar_log') {
+    $id = $_POST['id_log'] ?? '';
+    $resultado = $_POST['resultado'] ?? '';
+    $observaciones = $_POST['observaciones'] ?? '';
+
+    if (empty($id)) {
+        http_response_code(400);
+        echo json_encode(["error" => "ID de log no proporcionado"]);
+        exit;
+    }
+
+    $sql = "UPDATE Log_Actualizaciones 
+            SET ResultadoCorrecto = ?, 
+                Observaciones = ? 
+            WHERE ID = ?";
+    
+    $params = array($resultado, $observaciones, $id);
+    $stmt = sqlsrv_query($conn, $sql, $params);
+
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+
+    echo json_encode(["success" => true]);
     sqlsrv_close($conn);
     exit;
 }
