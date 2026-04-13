@@ -10,8 +10,10 @@ import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion } f
 // --- Inicialización ---
   
 /**
- * @description Función cargarOrganismos.
- * @returns {void|any}
+ * Realiza una petición al backend para obtener la lista de organismos únicos disponibles.
+ * Una vez obtenidos, puebla dinámicamente el selector (select) de organismos en el formulario.
+ * @async
+ * @returns {Promise<void>}
  */
 export async function cargarOrganismos() {
     try {
@@ -32,9 +34,12 @@ export async function cargarOrganismos() {
 
   
 /**
- * @description Función cargarProvincias.
- * @param {any} organismo
- * @returns {void|any}
+ * Obtiene la lista de provincias desde el servidor, opcionalmente filtrada por un organismo específico.
+ * Actualiza el selector de provincias y trata de mantener la selección previa si esta sigue existiendo
+ * en los nuevos resultados.
+ * @async
+ * @param {string} [organismo=""] - Nombre del organismo para filtrar las provincias.
+ * @returns {Promise<void>}
  */
 export async function cargarProvincias(organismo = "") {
     try {
@@ -70,24 +75,38 @@ export async function cargarProvincias(organismo = "") {
 
   
 /**
- * @description Función fetchAndRenderData.
- * @returns {void|any}
+ * Función principal de sincronización de datos. Realiza lo siguiente:
+ * 1. Aborta peticiones anteriores pendientes.
+ * 2. Solicita el dataset de máquinas y logs filtrado por los criterios actuales.
+ * 3. Compara estados para detectar cambios y disparar animaciones visuales.
+ * 4. Orquesta el renderizado de KPIs, errores activos y la vista (Tabla o Presentación).
+ * @async
+ * @returns {Promise<void>}
  */
 export async function fetchAndRenderData() {
+    // Cancelamos cualquier petición anterior que todavía esté en vuelo
     if (appState.currentController) appState.currentController.abort();
     appState.currentController = new AbortController();
+
     try {
+      // Realizamos la llamada al backend con los filtros actuales de estado
       const res = await fetch(
         `datos.php?modo=maquinas&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`,
         { signal: appState.currentController.signal }
       );
       const data = await res.json();
 
+      // Validación de seguridad: Si el backend devuelve un objeto de error en lugar de un array
+      if (!Array.isArray(data)) throw new Error(data.error || "La respuesta del servidor no es un listado válido.");
+
+      // Identificamos el estado de cada máquina para comparar cambios
       const nuevosEstados = {};
       data.forEach(m => { nuevosEstados[m.NumeroSerie] = getEstadoControl(m).clase; });
+      
       const maquinasCambiadas = new Set();
       if (Object.keys(appState.prevEstados).length > 0) {
         data.forEach(m => {
+          // Si el estado visual (clase CSS) ha cambiado, la añadimos para animar la fila
           if (appState.prevEstados[m.NumeroSerie] && appState.prevEstados[m.NumeroSerie] !== nuevosEstados[m.NumeroSerie]) {
             maquinasCambiadas.add(m.NumeroSerie);
           }
@@ -96,6 +115,7 @@ export async function fetchAndRenderData() {
       appState.prevEstados = nuevosEstados;
       appState.datosTabla = data;
 
+      // Si es la primera carga con datos, extraemos dinámicamente las columnas de la tabla
       if (data.length > 0 && appState.columnasTabla.length === 0) {
         appState.columnasTabla = Object.keys(data[0]).filter(col =>
           col !== "UltimoControl" && col !== "MonitorizarEstado" &&
@@ -105,12 +125,14 @@ export async function fetchAndRenderData() {
         appState.columnasTabla = [];
       }
 
+      // Renderizado de componentes globales
       renderKPIs(data);
       
       if (!appState.modoPresentacion) {
         renderLogsNormal(data);
       }
 
+      // Decidimos qué vista renderizar según el modo actual
       if (appState.modoPresentacion) {
         calcularMaxLineas();
         appState.paginasPresentacion = construirPaginasPresentacion(data);
@@ -121,6 +143,7 @@ export async function fetchAndRenderData() {
         dom.tabla.style.display = "table";
       }
 
+      // Actualizamos el mensaje de estado en la parte inferior de los filtros
       let msg = `${data.length} máquina${data.length !== 1 ? "s" : ""} total${data.length !== 1 ? "es" : ""}`;
       if (appState.filtroOrganismo && appState.filtroProvincia) msg += ` — "${appState.filtroOrganismo}" en "${appState.filtroProvincia}"`;
       else if (appState.filtroOrganismo) msg += ` — "${appState.filtroOrganismo}"`;

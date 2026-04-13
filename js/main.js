@@ -11,10 +11,14 @@ import './table.js';
 
 // --- visibilitychange ---
 
+  /**
+   * Gestiona el ciclo de vida de la actualización automática cuando el usuario
+   * cambia de pestaña o minimiza el navegador para ahorrar recursos.
+   */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       detenerActualizacionEstado();
-    } else if (appState.filtroOrganismo !== "" || appState.filtroProvincia !== "") {
+    } else if (appState.datosTabla.length > 0) {
       iniciarActualizacionEstado();
     }
   });
@@ -22,6 +26,9 @@ import './table.js';
   
 // --- Submit ---
 
+  /**
+   * Manejador del evento de envío del formulario de búsqueda principal.
+   */
   dom.form.addEventListener("submit", async (event) => {
     event.preventDefault();
     appState.filtroOrganismo = dom.selectOrganismo.value;
@@ -41,5 +48,6 @@ import './table.js';
   });
 
 // Inicialización
-cargarOrganismos();
-cargarProvincias();
+cargarOrganismos(); // Carga inicial de organismos en el selector
+cargarProvincias(); // Carga inicial de provincias en el selector
+

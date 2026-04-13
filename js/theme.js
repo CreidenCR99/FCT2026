@@ -5,21 +5,28 @@ import { themeToggle } from './dom.js';
 
 // --- Modo oscuro ---
 
+  /**
+   * Elemento raíz para aplicar el atributo de tema.
+   */
   const htmlEl = document.documentElement;
+  /**
+   * Detecta la preferencia inicial del sistema o navegador.
+   */
   let currentTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "dark" : "light";
   htmlEl.setAttribute("data-theme", currentTheme);
   updateThemeIcon();
 
+  /** Evento para alternar el tema visual de la aplicación. */
   themeToggle.addEventListener("click", () => {
-    currentTheme = currentTheme === "light" ? "light" : "dark";
+    currentTheme = currentTheme === "light" ? "dark" : "light";
     htmlEl.setAttribute("data-theme", currentTheme);
     updateThemeIcon();
   });
 
   
 /**
- * @description Función updateThemeIcon.
- * @returns {void|any}
+ * Actualiza el icono y la etiqueta de accesibilidad del botón de tema según el estado actual.
+ * @returns {void}
  */
 export function updateThemeIcon() {
     themeToggle.innerHTML = currentTheme === "light"

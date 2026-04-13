@@ -1,3 +1,11 @@
+/* ==========================================================================
+   1. VARIABLES Y TEMAS
+   Definición de tokens de diseño para modos claro y oscuro.
+   ========================================================================== */
+
+/**
+ * Tema Claro (Por defecto)
+ */
 :root,
 [data-theme="light"] {
   --bg: #f5f5f7;
@@ -22,6 +30,9 @@
   --kpi-log-color: #e07800;
 }
 
+/**
+ * Tema Oscuro
+ */
 [data-theme="dark"] {
   --bg: #111113;
   --surface: #1c1c1e;
@@ -42,10 +53,16 @@
   --kpi-log-color: #ffaa3c;
 }
 
-/* --- Animaciones --- */
+/* ==========================================================================
+   2. ANIMACIONES
+   ========================================================================== */
+
+/**
+ * entradaSuave: Utilizada para la carga inicial de secciones.
+ */
 @keyframes entradaSuave {
   from { opacity: 0; transform: translateY(15px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes shimmer {
@@ -58,9 +75,47 @@
   100% { background-color: transparent; }
 }
 
+@keyframes kpiPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); filter: brightness(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes kpiFlashUp {
+  0% { background-color: rgba(40, 167, 69, 0.50); }
+}
+
+@keyframes kpiFlashDown {
+  0% { background-color: rgba(161, 7, 2, 0.50); }
+}
+
+/**
+ * Animaciones para los indicadores de tendencia (Flechas)
+ */
+@keyframes trendEntrance {
+  from { opacity: 0; transform: scale(0.5) translateY(5px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes trendFloat {
+  0%, 100% { transform: translateY(5px); }
+  50%      { transform: translateY(-5px); }
+}
+
+@keyframes trendExit {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.5) translateY(-5px); }
+}
+
+/* ==========================================================================
+   3. ESTILOS BASE Y RESET
+   ========================================================================== */
+
 * { box-sizing: border-box; }
 
-/* Skip link */
+/**
+ * Accesibilidad: Enlace de salto para navegación por teclado.
+ */
 .skip-link {
   position: absolute; top: -100%; left: 8px;
   background: var(--primary); color: #fff;
@@ -87,7 +142,37 @@ main {
   margin: 0 auto;
 }
 
-/* ---- Formulario ---- */
+.page-logo img {
+  animation: entradaSuave 0.5s ease-out forwards;
+  height: clamp(35px, 5vh, 50px);
+  width: auto;
+}
+
+/* Logo flotante (Scroll) */
+.floating-logo {
+  position: fixed;
+  top: 20px;
+  left: clamp(16px, 2vw, 24px);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+  transform: translateY(-10px);
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15)) drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+}
+.floating-logo.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.floating-logo img { height: 35px; width: auto; }
+
+/* ==========================================================================
+   4. COMPONENTES GENERALES (Layout, Forms, Botones)
+   ========================================================================== */
+
 form, .tabla-section {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -95,6 +180,7 @@ form, .tabla-section {
   animation: entradaSuave 0.5s ease-out forwards;
 }
 
+/* ---- Estructura de Formulario ---- */
 form { padding: 28px 32px 24px; }
 
 .form-header {
@@ -114,22 +200,31 @@ h1 {
   display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
 }
 
-.form-control { margin-bottom: 0; }
+/* .form-control { margin-bottom: 0; } */
+/* ---- Controles de Entrada ---- */
 .form-control label {
   display: block; margin-bottom: 7px;
   font-size: clamp(0.88rem, 0.4vw + 0.74rem, 0.98rem);
   font-weight: 600; color: var(--text);
 }
 
-.form-control select {
-  width: 100%; padding: 11px 14px;
+.form-control select,
+.form-control input,
+.form-control textarea {
+  width: 100%; padding: 11px 14px; font-family: inherit;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface);
   font-size: clamp(0.93rem, 0.4vw + 0.78rem, 1rem);
   color: var(--text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.form-control select:focus {
+
+.form-control select { cursor: pointer; }
+.form-control textarea { resize: vertical; min-height: 80px; }
+
+.form-control select:focus,
+.form-control input:focus,
+.form-control textarea:focus {
   outline: none; border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-bg);
 }
@@ -169,6 +264,10 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 }
 .btn-icon:hover { color: var(--text); background: var(--border-soft); }
 
+/* ==========================================================================
+   5. MÓDULOS DE DATOS (KPIs, Logs, Tablas)
+   ========================================================================== */
+
 /* ---- KPI Cards ---- */
 /* En modo normal se ven dentro de tabla-section, antes del header */
 .kpi-section {
@@ -188,9 +287,15 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 
+.kpi-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
 .kpi-value {
   font-size: clamp(2rem, 3vw, 2.8rem); font-weight: 800;
-  line-height: 1; margin-bottom: 6px;
+  line-height: 1; margin-bottom: 0;
   color: var(--kpi-total-color);
   font-variant-numeric: tabular-nums;
 }
@@ -198,11 +303,39 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   font-size: clamp(0.8rem, 0.3vw + 0.7rem, 0.9rem);
   font-weight: 600; color: var(--text-muted);
 }
+
+.kpi-ok { background-color: rgba(40, 167, 69, 0.10); }
+.kpi-alerta { background-color: rgba(161, 7, 2, 0.10); }
+.kpi-log { background-color: rgba(224, 120, 0, 0.10); }
+
 .kpi-ok    .kpi-value { color: var(--kpi-ok-color); }
 .kpi-alerta .kpi-value { color: var(--kpi-alerta-color); }
 .kpi-log   .kpi-value { color: var(--kpi-log-color); }
 
-/* ---- Errores en pantalla normal ---- */
+.kpi-trend {
+  display: inline-block;
+  font-size: 1vw;
+  margin-left: 8px;
+  line-height: 1;
+  /* Aparece con trendEntrance y luego se queda balanceándose con trendFloat */
+  animation: trendEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             trendFloat 0.7s ease-in-out infinite 0.4s;
+}
+
+.kpi-pulse {
+  display: inline-block;
+  animation: kpiPulse 0.5s ease-out;
+}
+
+.kpi-animate-up {
+  animation: kpiFlashUp 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.kpi-animate-down {
+  animation: kpiFlashDown 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* ---- Sección de Errores Activos (Normal) ---- */
 .logs-normal-section {
   margin: 18px 24px 0;
   padding: 16px 20px;
@@ -239,20 +372,24 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   text-overflow: ellipsis;
 }
 
+.clickable-error {
+  cursor: pointer;
+}
+
 .log-item-clickable:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-sm);
   border-color: var(--primary);
 }
 
-/* ---- Modal ---- */
+/* ---- Modal de Gestión ---- */
 .modal {
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
+  inset: 0; width: 100%; height: 100%;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 10000;
+  display: none; align-items: center; justify-content: center;
+  z-index: 2147483647;
 }
 
 .modal-content {
@@ -277,21 +414,14 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 }
 .info-maquina p { margin: 6px 0; }
 
-.modal-body textarea {
-  width: 100%; padding: 12px;
-  border: 1px solid var(--border); border-radius: var(--radius-sm);
-  background: var(--surface); color: var(--text);
-  font-family: inherit; resize: vertical; font-size: 0.95rem;
-}
-
-/* ---- Tabla section ---- */
+/* ---- Sección de Tabla y Resultados ---- */
 .tabla-section {
   margin-top: 18px;
   padding: 0 0 24px;
   overflow: hidden;
 }
 
-/* Barra de progreso */
+/* Barra de progreso de actualización */
 .progress-bar-container {
   width: 100%; height: 0.25vh;
   background: var(--border-soft);
@@ -317,7 +447,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   display: flex; align-items: center; gap: 0.5vw; flex-wrap: wrap;
 }
 
-/* Buscador */
+/* Buscador interno */
 .search-input {
   padding: 7px 12px;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
@@ -372,15 +502,15 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 #tablaDatos tbody tr:hover { background: var(--surface-soft); }
 #tablaDatos tbody tr:last-child td { border-bottom: 0; }
 
-/* Cabeceras ordenables */
+/* Cabeceras de tabla ordenables */
 .th-sortable { cursor: pointer; user-select: none; }
 .th-sortable:hover { color: var(--primary); }
 .th-active { color: var(--primary); }
 
-/* Animación fila cambiada */
+/* Efecto visual al actualizar datos en una fila */
 .fila-cambiada { animation: flashCambio 2.5s ease-out forwards; }
 
-/* ---- Pills de estado ---- */
+/* ---- Pills (Badges) de estado ---- */
 .estado-pill {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 72px; padding: 5px 10px; border-radius: 999px;
@@ -408,6 +538,11 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   gap: 1vh;
   font-weight: 800;
   color: var(--text);
+}
+
+.logo-fullscreen img {
+  height: 5vh;
+  width: auto;
 }
 
 /* ---- Modo Presentación ---- */
@@ -493,14 +628,11 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   padding: 0.2vh 0.6vh;
 }
 
-/* ============================
-   FULLSCREEN — MODO PRESENTACIÓN
-   ============================
-   En pantalla completa:
-   - kpiSection actúa como cabecera visual
-   - Se ocultan: buscador, CSV, título "Resultados", estadoTabla
-   - paginacionInfo + botón Salir quedan visibles en tabla-header
-   ============================ */
+/**
+ * Pseudo-clase :fullscreen para reconfigurar el layout.
+ * - kpiSection actúa como cabecera visual.
+ * - Se ocultan elementos innecesarios para visualización pasiva.
+ */
 #tablaSection:fullscreen {
   width: 100%; height: 100%;
   max-width: none; margin: 0;
@@ -574,7 +706,10 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 :fullscreen { background: var(--bg); }
 
-/* ---- Responsive ---- */
+/* ==========================================================================
+   7. DISEÑO RESPONSIVO (Breakpoints)
+   ========================================================================== */
+
 @media (max-width: 1100px) {
   .kpi-section { grid-template-columns: repeat(2, 1fr); }
 }
@@ -610,7 +745,11 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   }
 }
 
-/* ---- Botón volver arriba ---- */
+/* ==========================================================================
+   8. UTILIDADES Y EXTRAS
+   ========================================================================== */
+
+/* Botón flotante para scroll superior */
 .btn-back-to-top {
   position: fixed;
   bottom: 24px;

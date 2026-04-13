@@ -3,6 +3,7 @@
  */
 import { appState } from './state.js';
 import * as dom from './dom.js';
+import { cerrarModal } from './ui.js';
 import { salirModoPresentation, renderPresentacion } from './presentation.js';
 
 // --- Búsqueda en tabla ---
@@ -17,8 +18,10 @@ import { salirModoPresentation, renderPresentacion } from './presentation.js';
 
   
 /**
- * @description Función exportarCSV.
- * @returns {void|any}
+ * Genera un archivo CSV con los datos actuales de las máquinas visibles (monitorizadas).
+ * Incluye todas las columnas de la tabla y añade una columna extra con el estado calculado (✓, !, ⚠, etc.).
+ * Dispara automáticamente la descarga en el navegador.
+ * @returns {void}
  */
 export function exportarCSV() {
     const datos = appState.datosTabla.filter(f => !esFalso(f.MonitorizarEstado));
@@ -46,9 +49,9 @@ export function exportarCSV() {
 
   
 /**
- * @description Función parseUltimoControl.
- * @param {any} valor
- * @returns {void|any}
+ * Convierte una cadena de texto con formato YYYYMMDDHHMM (proveniente de la DB) en un objeto Date de JS.
+ * @param {string|number} valor - El valor temporal en formato compacto.
+ * @returns {Date|null} Objeto Date si el formato es correcto, de lo contrario null.
  */
 export function parseUltimoControl(valor) {
     if (!valor) return null;
@@ -65,23 +68,28 @@ export function parseUltimoControl(valor) {
 
   
 /**
- * @description Función getEstadoControl.
- * @param {any} fila
- * @returns {void|any}
+ * Determina el estado de salud de una máquina basándose en su última conexión y alertas.
+ * - Prioriza "⚠" (naranja) si tiene alertas de log activas.
+ * - "✓" (verde) si conectó en los últimos 10 minutos.
+ * - "!" (rojo) si lleva más de 10 minutos sin reporte.
+ * - "?" (gris) si no hay datos de fecha.
+ * @param {Object} fila - Objeto con los datos de la máquina.
+ * @returns {{texto: string, clase: string}} Objeto con la etiqueta y la clase CSS correspondiente.
  */
 export function getEstadoControl(fila) {
-    if (esFalso(fila.MonitorizarAlertas)) return { texto: "LOG", clase: "estado-naranja" };
+    if (esFalso(fila.MonitorizarAlertas)) return { texto: "⚠", clase: "estado-naranja" };
     const fechaControl = parseUltimoControl(fila.UltimoControl);
     if (!fechaControl || Number.isNaN(fechaControl.getTime())) return { texto: "?", clase: "estado-gris" };
-    if ((new Date() - fechaControl) / 60000 < 10) return { texto: "OK", clase: "estado-verde" };
+    if ((new Date() - fechaControl) / 60000 < 10) return { texto: "✓", clase: "estado-verde" };
     return { texto: "!", clase: "estado-rojo" };
   }
 
   
 /**
- * @description Función esFalso.
- * @param {any} valor
- * @returns {void|any}
+ * Normaliza la comprobación de valores "falsos" o "nulos" que pueden venir de la base de datos como strings.
+ * Considera falso: null, undefined, false, 0, "0", "false", "null", "undefined" y cadenas vacías.
+ * @param {any} valor - El valor a evaluar.
+ * @returns {boolean} True si el valor se considera lógicamente falso para la aplicación.
  */
 export function esFalso(valor) {
     if (valor === null || typeof valor === "undefined") return true;
@@ -92,9 +100,10 @@ export function esFalso(valor) {
 
   
 /**
- * @description Función getTooltipEstado.
- * @param {any} fila
- * @returns {void|any}
+ * Construye el texto informativo para el tooltip de la pill de estado.
+ * Muestra la fecha y hora exacta del último control formateada para humanos.
+ * @param {Object} fila - Datos de la máquina.
+ * @returns {string} Mensaje informativo sobre el último control.
  */
 export function getTooltipEstado(fila) {
     const fecha = parseUltimoControl(fila.UltimoControl);
@@ -105,13 +114,13 @@ export function getTooltipEstado(fila) {
 
   
 // ---- Renderizar tabla ----
-
-  // [CAMBIO] Sin orden de prioridad por estado — se mantiene el orden original del servidor
   
 /**
- * @description Función renderTabla.
- * @param {any} maquinasCambiadas
- * @returns {void|any}
+ * Renderiza la tabla de datos en el DOM aplicando filtros de texto y ordenación.
+ * Crea las cabeceras interactivas y las filas de datos con sus respectivos badges de estado.
+ * @param {Set<string>} [maquinasCambiadas=new Set()] - Conjunto de Números de Serie que han cambiado 
+ * de estado desde la última actualización para aplicar efectos visuales.
+ * @returns {void}
  */
 export function renderTabla(maquinasCambiadas = new Set()) {
     let datosFiltrados = appState.datosTabla.filter(f => !esFalso(f.MonitorizarEstado));
@@ -174,9 +183,11 @@ export function renderTabla(maquinasCambiadas = new Set()) {
 
   
 /**
- * @description Función onSortClick.
- * @param {any} col
- * @returns {void|any}
+ * Maneja el evento de click en las cabeceras de la tabla para alternar la ordenación.
+ * Si se pulsa en la misma columna, invierte la dirección. Si es una nueva, ordena ascendente.
+ * Re-renderiza la tabla tras el cambio.
+ * @param {string} col - Nombre de la columna por la que ordenar.
+ * @returns {void}
  */
 export function onSortClick(col) {
     if (appState.sortCol === col) appState.sortDir = -appState.sortDir;
@@ -187,17 +198,26 @@ export function onSortClick(col) {
   
 // ---- Teclado ----
 
-  document.addEventListener("keydown", e => {
+  document.addEventListener("keydown", (e) => {
+    const isEscape = e.key === "Escape";
+    // Comprobación más fiable de si el modal está visible en pantalla (considerando CSS y estilos inline)
+    const isModalOpen = dom.modalLog && 
+                        window.getComputedStyle(dom.modalLog).display !== "none";
+
     // Prioridad: Cerrar modal si está abierto
-    if (dom.modalLog.style.display !== "none") {
-      if (e.key === "Escape") {
-        dom.modalLog.style.display = "none";
+    if (isModalOpen) {
+      if (isEscape) {
+        // Evitamos que el navegador procese el ESC para salir de pantalla completa
         e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        cerrarModal();
       }
       return; // Bloqueamos otras teclas mientras el modal está abierto
     }
 
     if (!appState.modoPresentacion) return;
+
     if (e.key === " " || e.key === "Spacebar") {
       e.preventDefault();
       appState.estaPausado = !appState.estaPausado;
@@ -210,7 +230,7 @@ export function onSortClick(col) {
     } else if (e.key === "ArrowLeft") {
       appState.paginaPresentacionActual = (appState.paginaPresentacionActual - 1 + appState.paginasPresentacion.length) % appState.paginasPresentacion.length;
       renderPresentacion();
-    } else if (e.key === "Escape") {
+    } else if (isEscape) {
       salirModoPresentation();
     }
   });

@@ -10,8 +10,9 @@ import { fetchAndRenderData } from './api.js';
 // ---- Calcular max líneas presentación ----
 
 /**
- * @description Función calcularMaxLineas.
- * @returns {void|any}
+ * Calcula dinámicamente el número máximo de líneas que pueden mostrarse en pantalla completa.
+ * El cálculo se basa en la altura del viewport para asegurar que el contenido no desborde.
+ * @returns {void}
  */
 export function calcularMaxLineas() {
     const calculo = Math.floor(window.innerHeight / 54);
@@ -39,8 +40,11 @@ export function calcularMaxLineas() {
 
   
 /**
- * @description Función iniciarActualizacionEstado.
- * @returns {void|any}
+ * Inicia el ciclo de actualización automática de datos.
+ * Llama a la API periódicamente y, si se está en modo presentación y no está pausado,
+ * avanza automáticamente a la siguiente página de máquinas.
+ * Reinicia la barra de progreso en cada ciclo.
+ * @returns {void}
  */
 export function iniciarActualizacionEstado() {
     detenerActualizacionEstado();
@@ -61,8 +65,8 @@ export function iniciarActualizacionEstado() {
 
   
 /**
- * @description Función detenerActualizacionEstado.
- * @returns {void|any}
+ * Detiene el intervalo de actualización automática y la barra de progreso.
+ * @returns {void}
  */
 export function detenerActualizacionEstado() {
     if (appState.estadoInterval) { clearInterval(appState.estadoInterval); appState.estadoInterval = null; }
@@ -75,9 +79,11 @@ export function detenerActualizacionEstado() {
   // Agrupa por organismo→provincia→cliente para que nunca se corte un bloque de cliente
   
 /**
- * @description Función construirPaginasPresentacion.
- * @param {any} datos
- * @returns {void|any}
+ * Organiza los datos de las máquinas en "páginas" optimizadas para el modo presentación.
+ * Implementa una lógica de agrupación por jerarquía (Organismo > Provincia > Cliente) para evitar que
+ * los bloques de información de un cliente se dividan entre páginas, mejorando la legibilidad.
+ * @param {Array<Object>} datos - El dataset completo de máquinas filtradas.
+ * @returns {Array<Array<Object>>} Un arreglo de páginas, donde cada página es un arreglo de elementos a renderizar.
  */
 export function construirPaginasPresentacion(datos) {
     const monitorizadas = datos.filter(m => !esFalso(m.MonitorizarEstado));
@@ -141,8 +147,10 @@ export function construirPaginasPresentacion(datos) {
   // El punto de corte entre columnas solo puede ocurrir al final de un bloque de cliente
   
 /**
- * @description Función renderPresentacion.
- * @returns {void|any}
+ * Renderiza la vista de presentación actual en pantalla completa.
+ * Divide la página en dos columnas equilibradas respetando los bloques de clientes.
+ * Además, gestiona la visualización rotativa de errores activos en el pie de página.
+ * @returns {void}
  */
 export function renderPresentacion() {
     if (!appState.paginasPresentacion.length || !appState.paginasPresentacion[0].length) {
@@ -218,9 +226,10 @@ export function renderPresentacion() {
 
   
 /**
- * @description Función renderItem.
- * @param {any} item
- * @returns {void|any}
+ * Genera el HTML correspondiente a un elemento individual (Organismo, Provincia, Cliente o Máquina) en la presentación.
+ * Aplica estilos y badges específicos según el tipo de dato y su estado de control.
+ * @param {Object} item - El objeto de datos a transformar en HTML.
+ * @returns {string} Fragmento de HTML string.
  */
 function renderItem(item) {
     if (item.tipo === "organismo") return `<div class="linea-organismo">${escapeHtml(item.texto)}</div>`;
@@ -241,7 +250,6 @@ function renderItem(item) {
     if (appState.datosTabla.length === 0) {
       await fetchAndRenderData();
       if (appState.datosTabla.length === 0) return;
-      iniciarActualizacionEstado();
     }
     try {
       appState.modoPresentacion = true;
@@ -256,6 +264,8 @@ function renderItem(item) {
       dom.modoPresentacionBtn.style.display = "none";
       dom.salirPresentacionBtn.style.display = "";
       renderPresentacion();
+      // Reiniciamos el temporizador y la barra de progreso al entrar
+      iniciarActualizacionEstado();
       await (dom.tablaSection.requestFullscreen?.() ?? dom.tablaSection.webkitRequestFullscreen?.call(dom.tablaSection));
     } catch (error) {
       console.error("No se pudo activar pantalla completa", error);
@@ -266,8 +276,9 @@ function renderItem(item) {
 
   
 /**
- * @description Función salirModoPresentation.
- * @returns {void|any}
+ * Realiza la limpieza necesaria al salir del modo presentación.
+ * Restaura la visibilidad de la tabla normal, detiene la pantalla completa y vuelve a renderizar los componentes estándar.
+ * @returns {void}
  */
 export function salirModoPresentation() {
     appState.modoPresentacion = false;
