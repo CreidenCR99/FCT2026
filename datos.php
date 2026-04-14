@@ -171,14 +171,18 @@ if ($modo === 'maquinas') {
      */
     $placeholders = implode(',', array_fill(0, count($numeroSeries), '?'));
     $sqlLogs = "SELECT
-                    Numero_Serie,
-                    Mensaje,
-                    ResultadoCorrecto,
-                    ID,
-                    Observaciones
-                FROM Log_Actualizaciones
-                WHERE Numero_Serie IN ($placeholders)
-                ORDER BY Numero_Serie, ID DESC";
+                    le.Id as ID,
+                    le.NumeroSerie as Numero_Serie,
+                    le.TipoMaquina,
+                    le.TimeStamp,
+                    le.CodigoError,
+                    le.Activo,
+                    le.Observaciones,
+                    e.Descripcion as Mensaje
+                FROM Log_Errores le
+                LEFT JOIN Errores e ON le.CodigoError = e.Codigo
+                WHERE le.NumeroSerie IN ($placeholders)
+                ORDER BY le.NumeroSerie, le.Id DESC";
 
     $stmtLogs = sqlsrv_query($conn, $sqlLogs, $numeroSeries);
 
@@ -228,36 +232,23 @@ if ($modo === 'crear_log') {
         exit;
     }
 
-    // Se asume la existencia de columnas Fecha y Hora en la tabla Log_Actualizaciones
-    $sql = "INSERT INTO Log_Actualizaciones 
-            (Numero_Serie, Mensaje, ResultadoCorrecto, Observaciones, Fecha, Hora) 
+    // El campo Activo en Log_Errores es 1 para error, 0 para solucionado.
+    // Invertimos el $resultado del UI (donde 0 es error y 1 es OK)
+    $activo = ($resultado == '0') ? 1 : 0;
+    $timestamp = str_replace('-', '', $fecha) . str_replace(':', '', $hora) . '00';
+
+    $sql = "INSERT INTO Log_Errores 
+            (NumeroSerie, TipoMaquina, TimeStamp, CodigoError, Activo, Observaciones) 
             VALUES (?, ?, ?, ?, ?, ?)";
     
-    $params = array($ns, $mensaje, $resultado, $observaciones, $fecha, $hora);
+    // Nota: TipoMaquina se deja vacío o se podría recuperar de la tabla Maquinas si fuera necesario
+    $params = array($ns, '', $timestamp, $mensaje, $activo, $observaciones);
     $stmt = sqlsrv_query($conn, $sql, $params);
 
     if ($stmt === false) {
         http_response_code(500);
         echo json_encode(["error" => sqlsrv_errors()]);
         exit;
-    }
-
-    // Actualización de MonitorizarAlertas en la tabla Maquinas
-    if ($resultado == '0') {
-        // Si el log es un error activo, marcamos la máquina con alerta (MonitorizarAlertas = 0)
-        sqlsrv_query($conn, "UPDATE Maquinas SET MonitorizarAlertas = 0 WHERE NumeroSerie = ?", array($ns));
-    } else {
-        // Si el log es solucionado, comprobamos si quedan otros errores pendientes para esta máquina
-        $sqlCheck = "SELECT COUNT(*) as Total FROM Log_Actualizaciones WHERE Numero_Serie = ? AND (ResultadoCorrecto = 0 OR ResultadoCorrecto IS NULL)";
-        $stmtCheck = sqlsrv_query($conn, $sqlCheck, array($ns));
-        if ($stmtCheck !== false) {
-            $resCheck = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC);
-            if ($resCheck['Total'] == 0) {
-                // No hay más errores activos: quitamos la alerta (MonitorizarAlertas = 1)
-                sqlsrv_query($conn, "UPDATE Maquinas SET MonitorizarAlertas = 1 WHERE NumeroSerie = ?", array($ns));
-            }
-            sqlsrv_free_stmt($stmtCheck);
-        }
     }
 
     echo json_encode(["success" => true]);
@@ -280,46 +271,21 @@ if ($modo === 'actualizar_log') {
         exit;
     }
 
-    // Obtenemos el Numero_Serie antes de actualizar para poder verificar el estado de la máquina después
-    $sqlNS = "SELECT Numero_Serie FROM Log_Actualizaciones WHERE ID = ?";
-    $stmtNS = sqlsrv_query($conn, $sqlNS, array($id));
-    $ns = null;
-    if ($stmtNS !== false && $rowNS = sqlsrv_fetch_array($stmtNS, SQLSRV_FETCH_ASSOC)) {
-        $ns = $rowNS['Numero_Serie'];
-    }
+    // Mapeo: UI resultado 0 (Error) -> Activo 1. UI resultado 1 (OK) -> Activo 0.
+    $activo = ($resultado == '0') ? 1 : 0;
 
-    $sql = "UPDATE Log_Actualizaciones 
-            SET ResultadoCorrecto = ?, 
+    $sql = "UPDATE Log_Errores 
+            SET Activo = ?, 
                 Observaciones = ? 
-            WHERE ID = ?";
+            WHERE Id = ?";
     
-    $params = array($resultado, $observaciones, $id);
+    $params = array($activo, $observaciones, $id);
     $stmt = sqlsrv_query($conn, $sql, $params);
 
     if ($stmt === false) {
         http_response_code(500);
         echo json_encode(["error" => sqlsrv_errors()]);
         exit;
-    }
-
-    // Actualización de MonitorizarAlertas en la tabla Maquinas
-    if ($ns) {
-        if ($resultado == '0') {
-            // Si se marca como no solucionado, activamos la alerta (MonitorizarAlertas = 0)
-            sqlsrv_query($conn, "UPDATE Maquinas SET MonitorizarAlertas = 0 WHERE NumeroSerie = ?", array($ns));
-        } else {
-            // Si se marca como solucionado, verificamos si es el último error pendiente
-            $sqlCheck = "SELECT COUNT(*) as Total FROM Log_Actualizaciones WHERE Numero_Serie = ? AND (ResultadoCorrecto = 0 OR ResultadoCorrecto IS NULL)";
-            $stmtCheck = sqlsrv_query($conn, $sqlCheck, array($ns));
-            if ($stmtCheck !== false) {
-                $resCheck = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC);
-                if ($resCheck['Total'] == 0) {
-                    // No quedan errores: volvemos a poner MonitorizarAlertas en 1 (true)
-                    sqlsrv_query($conn, "UPDATE Maquinas SET MonitorizarAlertas = 1 WHERE NumeroSerie = ?", array($ns));
-                }
-                sqlsrv_free_stmt($stmtCheck);
-            }
-        }
     }
 
     echo json_encode(["success" => true]);

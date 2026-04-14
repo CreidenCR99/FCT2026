@@ -68,6 +68,19 @@ export function parseUltimoControl(valor) {
 
   
 /**
+ * Obtiene únicamente la clase de conexión (verde/rojo/gris) basándose en la última fecha de reporte.
+ * No tiene en cuenta la prioridad de alertas por logs.
+ * @param {Object} fila - Datos de la máquina.
+ * @returns {string} Clase CSS del estado de conexión.
+ */
+export function getClaseConexion(fila) {
+    const fechaControl = parseUltimoControl(fila.UltimoControl);
+    if (!fechaControl || Number.isNaN(fechaControl.getTime())) return "estado-gris";
+    if ((new Date() - fechaControl) / 60000 < 10) return "estado-verde";
+    return "estado-rojo";
+}
+
+/**
  * Determina el estado de salud de una máquina basándose en su última conexión y alertas.
  * - Prioriza "⚠" (naranja) si tiene alertas de log activas.
  * - "✓" (verde) si conectó en los últimos 10 minutos.
@@ -77,11 +90,15 @@ export function parseUltimoControl(valor) {
  * @returns {{texto: string, clase: string}} Objeto con la etiqueta y la clase CSS correspondiente.
  */
 export function getEstadoControl(fila) {
-    if (esFalso(fila.MonitorizarAlertas)) return { texto: "⚠", clase: "estado-naranja" };
-    const fechaControl = parseUltimoControl(fila.UltimoControl);
-    if (!fechaControl || Number.isNaN(fechaControl.getTime())) return { texto: "?", clase: "estado-gris" };
-    if ((new Date() - fechaControl) / 60000 < 10) return { texto: "✓", clase: "estado-verde" };
-    return { texto: "!", clase: "estado-rojo" };
+    // Si el monitor de alertas está habilitado (1) y hay algún log activo (1)
+    const tieneErroresActivos = !esFalso(fila.MonitorizarAlertas) && 
+                                (fila.Logs || []).some(l => !esFalso(l.Activo));
+
+    if (tieneErroresActivos) return { texto: "⚠", clase: "estado-naranja" };
+
+    const clase = getClaseConexion(fila);
+    const texto = clase === "estado-verde" ? "✓" : (clase === "estado-rojo" ? "!" : "?");
+    return { texto, clase };
   }
 
   

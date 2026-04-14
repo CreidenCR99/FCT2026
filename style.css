@@ -138,7 +138,7 @@ body {
 
 main {
   width: 100%;
-  max-width: 1800px;
+  max-width: 95vw;
   margin: 0 auto;
 }
 
@@ -394,25 +394,54 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .modal-content {
   background: var(--surface);
-  width: 90%; max-width: 520px;
+  width: 45vw;
+  max-height: 90vh;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  padding: 28px;
+  padding: 4vh 2.5vw;
   animation: entradaSuave 0.3s ease-out;
+  overflow-y: auto;
 }
 
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 22px; border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 14px;
+  margin-bottom: 3vh; border-bottom: 1px solid var(--border-soft);
+  padding-bottom: 1.5vh;
+}
+
+.modal-header h2 {
+  font-size: 3vh;
+  margin: 0;
 }
 
 .info-maquina {
   background: var(--surface-offset);
-  padding: 14px; border-radius: var(--radius-md);
-  margin-bottom: 22px; font-size: 0.95rem; line-height: 1.5;
+  padding: 2vh 1.5vw; border-radius: var(--radius-md);
+  margin-bottom: 3vh; font-size: 1.8vh; line-height: 1.5;
 }
 .info-maquina p { margin: 6px 0; }
+
+/* Ajustes de controles dentro del modal para usar vh/vw */
+.modal-content .form-control {
+  margin-bottom: 2vh;
+}
+
+.modal-content .form-control label {
+  font-size: 1.7vh;
+  margin-bottom: 0.8vh;
+}
+
+.modal-content .form-control input,
+.modal-content .form-control select,
+.modal-content .form-control textarea {
+  padding: 1.2vh 1vw;
+  font-size: 1.8vh;
+}
+
+.modal-content .botones {
+  margin-top: 3vh;
+  gap: 1vw;
+}
 
 /* ---- Sección de Tabla y Resultados ---- */
 .tabla-section {
@@ -423,7 +452,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* Barra de progreso de actualización */
 .progress-bar-container {
-  width: 100%; height: 0.25vh;
+  width: 100%; height: 0.5vh;
   background: var(--border-soft);
   border-radius: 3px 3px 0 0; overflow: hidden;
 }
@@ -476,7 +505,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* ---- Tabla wrapper ---- */
 .tabla-wrapper {
-  overflow-x: auto; margin: 0 24px;
+  overflow-x: auto; margin: 24px 24px;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -567,9 +596,22 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   gap: clamp(10px, 2vw, 40px);
 }
 .presentacion-columna-errores { display: flex; flex-direction: column; }
+.presentacion-errores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.8vh;
+}
 .presentacion-errores-titulo {
   color: var(--text); font-weight: bold;
-  margin-bottom: 0.5vh; font-size: 2.2vh;
+  font-size: 2.2vh;
+  margin: 0;
+}
+.presentacion-errores-pagination {
+  color: var(--text-muted);
+  font-size: 1.7vh;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .presentacion-error-item {
   font-size: 1.8vh; margin-bottom: 0.5vh;
@@ -598,7 +640,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .linea-organismo, .linea-provincia, .linea-cliente, .linea-maquina {
   display: flex; align-items: center;
-  padding: 1vh 1.5vh; border-radius: 1.6vh;
+  padding: 1vh 1.5vw; border-radius: 1.6vh;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   border-bottom: 0.5vh solid rgba(0,0,0,0.25);
 }
@@ -618,7 +660,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 }
 .linea-maquina {
   color: #fff; font-size: 2vh; font-weight: 700;
-  margin-left: 3vh;
+  margin-left: 2vw;
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 .maquina-badge {
@@ -644,7 +686,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* Progress bar arriba del todo */
 #tablaSection:fullscreen .progress-bar-container {
-  border-radius: 0; height: 0.25vh;
+  border-radius: 0; height: 0.5vh;
 }
 
 /* KPI como header de la presentación */
@@ -652,7 +694,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   display: grid !important;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.2vh;
-  padding: 0 2vh 0;
+  padding: 0 2vh 1vh;
   flex-shrink: 0;
 }
 #tablaSection:fullscreen .kpi-card {

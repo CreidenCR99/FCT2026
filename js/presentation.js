@@ -191,10 +191,13 @@ export function renderPresentacion() {
     const errCol1 = errPagina.slice(0, 4);
     const errCol2 = errPagina.slice(4);
 
+    const paginationText = paginasErr > 1 ? `Página ${errIdx + 1} de ${paginasErr}` : "";
+
     const erroresHTML = todosErrores.length > 0 ? `
       <div class="presentacion-errores-footer">
-        <div class="presentacion-errores-titulo">
-          ERRORES ACTIVOS
+        <div class="presentacion-errores-header">
+          <div class="presentacion-errores-titulo">ERRORES ACTIVOS</div>
+          <div class="presentacion-errores-pagination">${paginationText}</div>
         </div>
         <div class="presentacion-errores-columnas">
           <div class="presentacion-columna-errores">

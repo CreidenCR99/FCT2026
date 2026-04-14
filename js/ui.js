@@ -3,7 +3,7 @@
  */
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
-import { getEstadoControl, esFalso } from './table.js';
+import { getEstadoControl, esFalso, getClaseConexion } from './table.js';
 import { fetchAndRenderData } from './api.js';
 import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion, salirModoPresentation } from './presentation.js';
 
@@ -34,15 +34,16 @@ export function mostrarSkeleton() {
 export function renderKPIs(data) {
     const monitorizadas = data.filter(m => !esFalso(m.MonitorizarEstado));
     const total  = monitorizadas.length;
-    const ok     = monitorizadas.filter(m => getEstadoControl(m).clase === "estado-verde").length;
-    const alerta = monitorizadas.filter(m => getEstadoControl(m).clase === "estado-rojo").length;
+    const ok     = monitorizadas.filter(m => getClaseConexion(m) === "estado-verde").length;
+    const alerta = monitorizadas.filter(m => getClaseConexion(m) === "estado-rojo").length;
 
     // Contar entradas de log fallidas de TODAS las máquinas del dataset completo
+    // Solo si MonitorizarAlertas es true (1)
     const log = data
-      .filter(m => esFalso(m.MonitorizarAlertas))
+      .filter(m => !esFalso(m.MonitorizarAlertas))
       .reduce((acc, m) => {
-        const logsFallo = (m.Logs || []).filter(l => esFalso(l.ResultadoCorrecto));
-        return acc + (logsFallo.length > 0 ? logsFallo.length : 1);
+        const logsFallo = (m.Logs || []).filter(l => !esFalso(l.Activo));
+        return acc + logsFallo.length;
       }, 0);
 
     const prev = appState.prevKpis;
@@ -162,12 +163,13 @@ function animateNumber(id, start, end, type, duration) {
  * @returns {Array<Object>} Lista de objetos con la estructura { maquina, log }.
  */
 export function obtenerErroresActivos(data) {
-    const maquinasConErrores = data.filter(m => esFalso(m.MonitorizarAlertas));
+    const maquinasConMonitorActivo = data.filter(m => !esFalso(m.MonitorizarAlertas));
     const errores = [];
-    maquinasConErrores.forEach(m => {
-      const logsFallo = (m.Logs || []).filter(log => esFalso(log.ResultadoCorrecto));
+    maquinasConMonitorActivo.forEach(m => {
+      const logsFallo = (m.Logs || []).filter(log => !esFalso(log.Activo));
       if (logsFallo.length === 0) {
-        errores.push({ maquina: m, log: { Mensaje: "Error desconocido", ID: null, ResultadoCorrecto: 0 } });
+        // Si tiene el monitor activo pero no hay logs, no mostramos error por defecto
+        // (Opcional: podrías añadir un mensaje de "Sin logs" si prefieres)
       } else {
         logsFallo.forEach(log => errores.push({ maquina: m, log: log }));
       }
@@ -241,8 +243,17 @@ export function abrirModalError(errorObj) {
         msgStatic.textContent = errorObj.log.Mensaje;
     }
 
+    // Mostrar información adicional del error en el modal
+    const elCodigo = document.getElementById("modalCodigoError");
+    if (elCodigo) elCodigo.textContent = isNew ? "-" : (errorObj.log.CodigoError || "-");
+    const elTipo = document.getElementById("modalTipoMaquina");
+    if (elTipo) elTipo.textContent = isNew ? "-" : (errorObj.log.TipoMaquina || "-");
+    const elTS = document.getElementById("modalFechaHora");
+    if (elTS) elTS.textContent = isNew ? "-" : formatTimeStamp(errorObj.log.TimeStamp);
+
     document.getElementById("modalLogId").value = errorObj.log.ID || "";
-    document.getElementById("modalEstadoError").value = errorObj.log.ResultadoCorrecto ?? 0;
+    // Mapeo inverso para el select del UI: Activo 1 (Error) -> Value 0. Activo 0 (OK) -> Value 1.
+    document.getElementById("modalEstadoError").value = !esFalso(errorObj.log.Activo) ? "0" : "1";
     document.getElementById("modalObservaciones").value = errorObj.log.Observaciones || "";
     dom.modalLog.style.display = "flex";
   }
@@ -263,7 +274,7 @@ export function renderLogsNormal(data) {
     }
 
     dom.logsNormalSection.innerHTML = `
-      <div class="logs-normal-titulo">ERRORES ACTIVOS (${errores.length})</div>
+      <div class="logs-normal-titulo">ERRORES ACTIVOS</div>
       <div class="logs-normal-grid" id="logsGrid">
         ${errores.map((e, idx) => `
           <div class="log-item-clickable" data-idx="${idx}" title="Click para ver detalles y gestionar">
@@ -318,9 +329,9 @@ export function detenerProgressBar() {
   
 // ---- Modal Logic ----
 
-  dom.cerrarModalBtn.addEventListener("click", () => { dom.modalLog.style.display = "none"; });
-  dom.cancelarEdicionBtn.addEventListener("click", () => { dom.modalLog.style.display = "none"; });
-  window.addEventListener("click", e => { if (e.target === dom.modalLog) dom.modalLog.style.display = "none"; });
+  dom.cerrarModalBtn.addEventListener("click", () => { cerrarModal(); });
+  dom.cancelarEdicionBtn.addEventListener("click", () => { cerrarModal(); });
+  window.addEventListener("click", e => { if (e.target === dom.modalLog) cerrarModal(); });
 
   
 // ---- Lógica Volver Arriba ----
@@ -412,6 +423,16 @@ export function detenerProgressBar() {
   
 // ---- Escape HTML ----
 
+/**
+ * Formatea un TimeStamp YYYYMMDDHHMMSS para mostrar en la UI.
+ * @param {string|number} ts - Timestamp de 14 dígitos.
+ * @returns {string} Fecha formateada DD/MM/YYYY HH:MM:SS.
+ */
+function formatTimeStamp(ts) {
+    if (!ts || String(ts).length < 14) return ts || "-";
+    const s = String(ts);
+    return `${s.slice(6, 8)}/${s.slice(4, 6)}/${s.slice(0, 4)} ${s.slice(8, 10)}:${s.slice(10, 12)}:${s.slice(12, 14)}`;
+}
   
 /**
  * Sanitiza una cadena de texto para prevenir ataques de Cross-Site Scripting (XSS).

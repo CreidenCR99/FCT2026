@@ -10,13 +10,13 @@ Sistema de monitorización y gestión de estados de máquinas distribuido por or
   - Total de máquinas listadas.
   - Máquinas con estado **Activo** (Conectadas recientemente).
   - Máquinas **Sin respuesta** (Alerta de conexión).
-  - **Errores activos** detectados en los logs.
+  - **Errores activos** detectados en el log de errores (filtrado por monitorización).
 
 ### 1.2. Gestión de Errores
 - **Listado de Errores Activos:** Visualización inmediata de las máquinas que presentan fallos.
 - **Registro de Nuevos Errores:** Permite dar de alta manualmente un error para máquinas con fallos desconocidos.
-- **Edición de Logs:** Modal interactivo para actualizar el estado de un error (Solucionado/Sin solucionar) y añadir observaciones técnicas.
-- **Campos Obligatorios:** Validación de Fecha, Hora y Mensaje para mantener la integridad de la base de datos.
+- **Edición de Logs:** Modal interactivo para actualizar el estado de un error (Activo/Inactivo) y añadir observaciones técnicas. Incluye visualización de Código de Error, Tipo de Máquina y Fecha/Hora exacta.
+- **Campos Obligatorios:** Validación de Código de Error, Fecha y Hora para mantener la integridad de la base de datos.
 
 ### 1.3. Modo Presentación (Pantalla Completa)
 - Diseñado para ser visualizado en monitores de control o TVs.
@@ -27,8 +27,8 @@ Sistema de monitorización y gestión de estados de máquinas distribuido por or
 ### 1.4. Interfaz y Experiencia de Usuario
 - **Modo Oscuro/Claro:** Soporte nativo para temas visuales que se adaptan a la preferencia del usuario o del entorno.
 - **Refresco Automático:** Sincronización constante con el servidor cada 7.5 segundos con una barra de progreso visual.
-- **Exportación:** Permite descargar los resultados actuales en formato CSV para reportes externos.
-- **Diseño Responsivo:** Adaptado para su uso en pantallas horizontales de todos los tamaños.
+- **Exportación:** Permite descargar los resultados actuales en formato CSV para reportes externos (incluye estado de conexión).
+- **Diseño Fluido:** Interfaz adaptada mediante unidades relativas (`vh`/`vw`) para una escala perfecta en pantallas horizontales de alta resolución.
 
 ---
 
@@ -78,7 +78,7 @@ La aplicación está construida utilizando **Módulos de JavaScript (ESM)**, lo 
 - **`table.js`**: Especializado en la lógica de la tabla principal: cálculo de estados (OK/Error/Sin Respuesta), formateo de fechas y renderizado de filas con animaciones de cambio.
 
 ### Ciclo de Vida del Refresco:
-1. Se activa un `setInterval` (7.5s por defecto).
+1. Se activa un `setInterval` (7.5s definido en `INTERVALO_MS`).
 2. `api.js` solicita nuevos datos.
 3. Se comparan los estados actuales con los anteriores para disparar la animación de "flash" en las filas cambiadas.
 4. Se actualizan los KPIs y la tabla/presentación sin recargar la página.
@@ -92,7 +92,7 @@ El sistema se conecta a una base de datos **SQL Server**. A continuación se det
 ### Tabla: `Maquinas`
 Es la entidad central del sistema.
 | Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
+|-------|--------|--------|
 | `NumeroSerie` | PK | Identificador único físico de la máquina. |
 | `Descripcion` | String | Nombre descriptivo. |
 | `organismo` | FK | Código que enlaza con la tabla `Organismos`. |
@@ -100,19 +100,27 @@ Es la entidad central del sistema.
 | `cliente` | FK | Código que enlaza con la tabla `Clientes`. |
 | `UltimoControl` | String (YYYYMMDDHHMM) | Marca de tiempo de la última conexión. |
 | `MonitorizarEstado` | Bit/Bool | Indica si la máquina debe aparecer en el listado general. |
-| `MonitorizarAlertas` | Bit/Bool | Indica si la máquina está en estado de error crítico. |
+| `MonitorizarAlertas` | Bit/Bool | Si es `0` (false), los errores de la máquina se ignoran para KPIs y estados. |
 
-### Tabla: `Log_Actualizaciones`
-Almacena el historial de errores y las intervenciones técnicas.
+### Tabla: `Log_Errores`
+Almacena el historial de incidencias técnicas.
 | Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
-| `ID` | PK (Identity) | Identificador autoincremental del log. |
-| `Numero_Serie` | FK | Relación 1:N con la tabla `Maquinas`. |
-| `Mensaje` | String | Descripción del error detectado. |
-| `ResultadoCorrecto` | Bit/Bool | `1` si está solucionado, `0` si persiste. |
+|-------|--------|--------|
+| `Id` | PK (Identity) | Identificador autoincremental. |
+| `NumeroSerie` | FK | Relación con la tabla `Maquinas`. |
+| `TipoMaquina` | String | Categoría o modelo de la máquina. |
+| `TimeStamp` | String (YYYYMMDDHHMMSS) | Marca de tiempo precisa del evento. |
+| `CodigoError` | FK | Enlace con la tabla `Errores`. |
+| `Activo` | Bit/Bool | `1` si el error persiste, `0` si está solucionado. |
 | `Observaciones` | Text | Notas introducidas por el técnico. |
-| `Fecha` | String (YYYYMMDD) | Fecha del registro. |
-| `Hora` | String (HH:MM) | Hora del registro. |
+
+### Tabla: `Errores`
+Diccionario maestro de códigos de error.
+| Campo | Tipo | Descripción |
+|-------|--------|--------|
+| `id` | PK | ID interno. |
+| `Codigo` | String | Código alfanumérico del error. |
+| `Descripcion` | String | Texto explicativo del fallo. |
 
 ### Tablas Maestras (`Organismos`, `Provincias`, `Clientes`)
 Tablas de referencia que contienen el `codigo` y el `Nombre` para normalizar los datos de las máquinas.
@@ -124,9 +132,9 @@ Tablas de referencia que contienen el `codigo` y el `Nombre` para normalizar los
 El archivo `datos.php` actúa como un **API RESTful** simplificado. Utiliza el parámetro `modo` para determinar la acción:
 
 - **`organismos` / `provincias`**: Devuelve listas únicas para llenar los selectores del filtro.
-- **`maquinas`**: Realiza un `LEFT JOIN` complejo entre máquinas y sus respectivos logs. Agrupa los logs en un array dentro de cada objeto máquina antes de enviarlo al cliente.
-- **`crear_log`**: Inserta una nueva entrada cuando el usuario registra un error manualmente (campos Fecha, Hora y Mensaje obligatorios).
-- **`actualizar_log`**: Realiza un `UPDATE` sobre una entrada existente para cambiar su estado u observaciones.
+- **`maquinas`**: Realiza un `LEFT JOIN` con `Log_Errores` y `Errores`. Filtra por jerarquía y devuelve la estructura anidada de máquinas y sus logs activos.
+- **`crear_log`**: Inserta en `Log_Errores`. Calcula el `TimeStamp` y mapea el estado de `Activo` basado en la entrada de la UI.
+- **`actualizar_log`**: Actualiza el campo `Activo` y las `Observaciones` en `Log_Errores`.
 
 ### Seguridad y Conexión:
 - Utiliza un archivo `.env` para las credenciales de base de datos.

@@ -125,8 +125,6 @@
 
         <div id="logsNormalSection" class="logs-normal-section" hidden aria-label="Errores activos"></div>
 
-        <br>
-
         <div class="tabla-wrapper" id="tablaWrapper">
           <table id="tablaDatos" style="display:none" role="grid" aria-label="Lista de máquinas">
             <thead></thead>
@@ -149,12 +147,15 @@
             </div>
             <div class="modal-body">
               <div class="info-maquina">
+                <p><strong>Fecha y hora:</strong> <span id="modalFechaHora"></span></p>
                 <p><strong>Organismo:</strong> <span id="modalOrganismo"></span></p>
                 <p><strong>Provincia:</strong> <span id="modalProvincia"></span></p>
                 <p><strong>Cliente:</strong> <span id="modalCliente"></span></p>
                 <p><strong>Máquina:</strong> <span id="modalMaquinaDesc"></span></p>
+                <p><strong>Tipo de máquina:</strong> <span id="modalTipoMaquina"></span></p>
                 <p><strong>Número de Serie:</strong> <span id="modalMaquinaSN"></span></p>
                 <p><strong>Error Original:</strong> <span id="modalErrorMsg"></span></p>
+                <p><strong>Código del error:</strong> <span id="modalCodigoError"></span></p>
               </div>
               <form id="formEdicionLog">
                 <input type="hidden" id="modalLogId" name="id_log">
