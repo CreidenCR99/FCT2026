@@ -27,6 +27,10 @@ export const INTERVALO_MS = 7500;
  * @property {Object} prevKpis - Almacena los valores anteriores de los KPIs para las animaciones numéricas.
  * @property {string|null} sortCol - Nombre de la columna por la que se está ordenando actualmente.
  * @property {number} sortDir - Dirección de la ordenación (1 para ascendente, -1 para descendente).
+ * @property {Object|null} currentModalData - Datos de la máquina/log que se están visualizando en el modal.
+ * @property {Array<Object>} currentModalLogs - Lista de logs de la máquina actual en el modal.
+ * @property {number} currentModalLogIndex - Índice del log actual mostrado en el modal.
+ * @property {string} lastDataHash - Hash o representación en string de los últimos datos recibidos para evitar re-renders.
  */
 export const appState = {
   maxLineasPresentacion: 20,
@@ -44,5 +48,9 @@ export const appState = {
   prevEstados: {},
   prevKpis: { total: 0, ok: 0, alerta: 0, log: 0 },
   sortCol: null,
-  sortDir: 1
+  sortDir: 1,
+  currentModalData: null,
+  currentModalLogs: [],
+  currentModalLogIndex: -1,
+  lastDataHash: ""
 };

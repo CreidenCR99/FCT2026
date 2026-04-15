@@ -8,6 +8,10 @@
     <title>SicoLares - Control de máquinas</title>
     <link rel="stylesheet" href="style.css" />
 
+    <!-- Librerías de utilidad -->
+    <script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Punto de entrada principal como módulo -->
     <script src="js/main.js" type="module"></script>
   </head>
@@ -139,8 +143,12 @@
           <div class="modal-content">
             <div class="modal-header">
               <h2 id="modalTitle">Detalles del Error</h2>
+              <div id="modalNavBtns" style="display:none; margin-left: auto; margin-right: 1.5vw; display: flex; gap: 0.5vw;">
+                <button type="button" id="prevErrorBtn" class="btn-primary btn-small" title="Error anterior">◀</button>
+                <button type="button" id="nextErrorBtn" class="btn-primary btn-small" title="Siguiente error">▶</button>
+              </div>
               <button type="button" id="cerrarModalBtn" class="btn-icon" aria-label="Cerrar modal">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
               </button>
@@ -148,6 +156,7 @@
             <div class="modal-body">
               <div class="info-maquina">
                 <p><strong>Fecha y hora:</strong> <span id="modalFechaHora"></span></p>
+                <p><strong>Última conexión:</strong> <span id="modalUltimaConexion" style="font-weight: bold; color: var(--primary);"></span></p>
                 <p><strong>Organismo:</strong> <span id="modalOrganismo"></span></p>
                 <p><strong>Provincia:</strong> <span id="modalProvincia"></span></p>
                 <p><strong>Cliente:</strong> <span id="modalCliente"></span></p>
@@ -161,13 +170,13 @@
                 <input type="hidden" id="modalLogId" name="id_log">
                 <input type="hidden" id="modalMaquinaNS_hidden" name="numero_serie">
 
-                <div class="form-control" id="containerMensaje" style="display: none; margin-bottom: 15px;">
+                <div class="form-control" id="containerMensaje" style="display: none; margin-bottom: 2vh;">
                   <label for="modalMensajeInput">Mensaje de error*</label>
                   <input type="text" id="modalMensajeInput" name="mensaje" placeholder="Ej: Error de conexión">
                 </div>
 
-                <div class="form-control" id="containerFechaHora" style="display: none; margin-bottom: 15px;">
-                  <div style="display: flex; gap: 10px;">
+                <div class="form-control" id="containerFechaHora" style="display: none; margin-bottom: 2vh;">
+                  <div style="display: flex; gap: 1vw;">
                     <div style="flex: 1;">
                       <label for="modalFecha">Fecha*</label>
                       <input type="date" id="modalFecha">
@@ -179,14 +188,14 @@
                   </div>
                 </div>
 
-                <div class="form-control" style="margin-bottom: 15px;">
+                <div class="form-control" style="margin-bottom: 2vh;">
                   <label for="modalEstadoError">Estado del error</label>
                   <select id="modalEstadoError" name="resultado">
                     <option value="1">Solucionado (True)</option>
                     <option value="0">Sin solucionar (False)</option>
                   </select>
                 </div>
-                <div class="form-control" style="margin-bottom: 20px;">
+                <div class="form-control" style="margin-bottom: 3vh;">
                   <label for="modalObservaciones">Observaciones</label>
                   <textarea id="modalObservaciones" name="observaciones" rows="3" placeholder="Escribe aquí las observaciones..."></textarea>
                 </div>

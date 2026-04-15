@@ -3,6 +3,51 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 header("Content-Type: application/json; charset=UTF-8");
 
+// Intentamos habilitar la compresión Brotli (más eficiente que Gzip para texto/JSON).
+// Si la extensión no está cargada o el cliente no lo soporta, volvemos a Gzip.
+$supportsBrotli = extension_loaded('brotli') && 
+                  isset($_SERVER['HTTP_ACCEPT_ENCODING']) && 
+                  strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'br') !== false;
+
+if ($supportsBrotli) {
+    ob_start(function($buffer) {
+        header('Content-Encoding: br');
+        header('Vary: Accept-Encoding');
+        return brotli_compress($buffer, 6); // Nivel 6: balance óptimo entre uso de CPU y tasa de compresión
+    });
+} else {
+    if (!ob_start("ob_gzhandler")) {
+        ob_start();
+    }
+}
+
+/**
+ * Envía una respuesta JSON optimizada mediante ETags.
+ * Si los datos no han cambiado desde la última petición, devuelve 304 Not Modified,
+ * ahorrando ancho de banda y recursos de red.
+ */
+function responder_json_si_cambia($data, $conn = null) {
+    $json = json_encode($data);
+    $etag = md5($json);
+    
+    // Obligamos a revalidar el caché en cada petición mediante headers estándar
+    header("ETag: \"$etag\"");
+    header("Cache-Control: no-cache, must-revalidate");
+
+    if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+        $etag_cliente = trim($_SERVER['HTTP_IF_NONE_MATCH'], '"');
+        if ($etag_cliente === $etag) {
+            if ($conn) sqlsrv_close($conn);
+            http_response_code(304);
+            exit;
+        }
+    }
+
+    echo $json;
+    if ($conn) sqlsrv_close($conn);
+    exit;
+}
+
 /**
  * Carga variables de entorno desde un archivo .env local.
  * Parsea cada línea, ignorando comentarios (#) y líneas vacías, para asignar
@@ -72,10 +117,8 @@ if ($modo === 'organismos') {
         $data[] = $row;
     }
 
-    echo json_encode($data);
     sqlsrv_free_stmt($stmt);
-    sqlsrv_close($conn);
-    exit;
+    responder_json_si_cambia($data, $conn);
 }
 
 /**
@@ -107,10 +150,8 @@ if ($modo === 'provincias') {
         $data[] = $row;
     }
 
-    echo json_encode($data);
     sqlsrv_free_stmt($stmt);
-    sqlsrv_close($conn);
-    exit;
+    responder_json_si_cambia($data, $conn);
 }
 
 /**
@@ -181,7 +222,8 @@ if ($modo === 'maquinas') {
                     e.Descripcion as Mensaje
                 FROM Log_Errores le
                 LEFT JOIN Errores e ON le.CodigoError = e.Codigo
-                WHERE le.NumeroSerie IN ($placeholders)
+                WHERE le.NumeroSerie IN ($placeholders) 
+                  AND le.Activo = 1
                 ORDER BY le.NumeroSerie, le.Id DESC";
 
     $stmtLogs = sqlsrv_query($conn, $sqlLogs, $numeroSeries);
@@ -195,6 +237,8 @@ if ($modo === 'maquinas') {
     $logsByNumeroSerie = [];
     while ($logRow = sqlsrv_fetch_array($stmtLogs, SQLSRV_FETCH_ASSOC)) {
         $ns = $logRow['Numero_Serie'];
+        // Eliminamos el NumeroSerie del log individual para no repetir datos
+        unset($logRow['Numero_Serie']);
         if (!isset($logsByNumeroSerie[$ns])) {
             $logsByNumeroSerie[$ns] = [];
         }
@@ -208,9 +252,23 @@ if ($modo === 'maquinas') {
     }
     unset($machine); 
 
-    echo json_encode($machines);
-    sqlsrv_close($conn);
-    exit;
+    // Enviamos las columnas una vez y los datos como arrays simples
+    $cols = ["Organismo", "Provincia", "Cliente", "Descripcion", "UltimoControl", "MonitorizarEstado", "MonitorizarAlertas", "NumeroSerie", "Logs"];
+    $rows = [];
+    foreach ($machines as $m) {
+        $row = [];
+        foreach ($cols as $c) {
+            $val = $m[$c] ?? ($c === 'Logs' ? [] : null);
+            // Tipado: Convertimos monitores a int para ahorrar quotes en JSON
+            if ($c === 'MonitorizarEstado' || $c === 'MonitorizarAlertas') {
+                $val = (int)$val;
+            }
+            $row[] = $val;
+        }
+        $rows[] = $row;
+    }
+
+    responder_json_si_cambia(["cols" => $cols, "rows" => $rows], $conn);
 }
 
 /**

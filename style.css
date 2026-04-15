@@ -21,9 +21,9 @@
   --primary-bg: rgba(0, 122, 255, 0.08);
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --radius-lg: 2vh;
+  --radius-md: 1.5vh;
+  --radius-sm: 1vh;
   --kpi-total-color: #1d1d1f;
   --kpi-ok-color: #28a745;
   --kpi-alerta-color: #a10702;
@@ -93,18 +93,18 @@
  * Animaciones para los indicadores de tendencia (Flechas)
  */
 @keyframes trendEntrance {
-  from { opacity: 0; transform: scale(0.5) translateY(5px); }
+  from { opacity: 0; transform: scale(0.5) translateY(1vh); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 @keyframes trendFloat {
-  0%, 100% { transform: translateY(5px); }
-  50%      { transform: translateY(-5px); }
+  0%, 100% { transform: translateY(1vh); }
+  50%      { transform: translateY(-1vh); }
 }
 
 @keyframes trendExit {
   from { opacity: 1; transform: scale(1); }
-  to   { opacity: 0; transform: scale(0.5) translateY(-5px); }
+  to   { opacity: 0; transform: scale(0.5) translateY(-1vh); }
 }
 
 /* ==========================================================================
@@ -127,7 +127,7 @@
 
 body {
   margin: 0;
-  padding: clamp(16px, 2vw, 24px);
+  padding: 2vh 2vw;
   min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: clamp(14px, 0.9vw + 10px, 18px);
@@ -181,11 +181,11 @@ form, .tabla-section {
 }
 
 /* ---- Estructura de Formulario ---- */
-form { padding: 28px 32px 24px; }
+form { padding: 3vh 2.5vw; }
 
 .form-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 2.5vh;
 }
 
 h1 {
@@ -197,13 +197,13 @@ h1 {
 .logo-icon { flex-shrink: 0; }
 
 .form-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5vw;
 }
 
 /* .form-control { margin-bottom: 0; } */
 /* ---- Controles de Entrada ---- */
 .form-control label {
-  display: block; margin-bottom: 7px;
+  display: block; margin-bottom: 0.8vh;
   font-size: clamp(0.88rem, 0.4vw + 0.74rem, 0.98rem);
   font-weight: 600; color: var(--text);
 }
@@ -211,7 +211,7 @@ h1 {
 .form-control select,
 .form-control input,
 .form-control textarea {
-  width: 100%; padding: 11px 14px; font-family: inherit;
+  width: 100%; padding: 1.2vh 1vw; font-family: inherit;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface);
   font-size: clamp(0.93rem, 0.4vw + 0.78rem, 1rem);
@@ -231,7 +231,7 @@ h1 {
 
 /* ---- Botones ---- */
 .botones {
-  display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+  display: flex; justify-content: flex-end; gap: 0.8vw; margin-top: 2.5vh;
 }
 
 button {
@@ -251,7 +251,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .btn-secondary {
   background: var(--surface-offset); color: var(--text);
-  border: 1px solid var(--border);
+  border: 0.2vh solid var(--border);
 }
 .btn-secondary:hover { background: var(--border-soft); }
 
@@ -273,16 +273,16 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .kpi-section {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  padding: 0 24px 0;
+  gap: 1.5vw;
+  padding: 0 2vw;
 }
 
 .kpi-card {
   background: var(--surface-soft);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  padding: 16px 20px;
-  border: 1px solid var(--border-soft);
+  padding: 2vh 1.5vw;
+  border: 0.2vh solid var(--border-soft);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
@@ -290,7 +290,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .kpi-row {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 0.8vh;
 }
 
 .kpi-value {
@@ -314,9 +314,8 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .kpi-trend {
   display: inline-block;
-  font-size: 1vw;
-  margin-left: 8px;
-  line-height: 1;
+  font-size: 1vw; font-weight: 800;
+  line-height: 1; margin-left: 0.3vw;
   /* Aparece con trendEntrance y luego se queda balanceándose con trendFloat */
   animation: trendEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
              trendFloat 0.7s ease-in-out infinite 0.4s;
@@ -337,31 +336,31 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* ---- Sección de Errores Activos (Normal) ---- */
 .logs-normal-section {
-  margin: 18px 24px 0;
-  padding: 16px 20px;
+  margin: 2vh 2vw 0;
+  padding: 2vh 1.5vw;
   background: var(--surface-soft);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
-  border-left: 5px solid #f58a07;
+  border-left: 0.4vw solid #f58a07;
   animation: entradaSuave 0.5s ease-out forwards;
 }
 
 .logs-normal-titulo {
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 1.5vh;
   color: var(--text);
   font-size: clamp(0.9rem, 1vh + 0.5rem, 1.1rem);
 }
 
 .logs-normal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
+  gap: 0.4vw;
 }
 
 .log-item-clickable {
   cursor: pointer;
-  padding: 10px 14px;
+  padding: 1vh 1vw;
   background: var(--surface);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
@@ -445,16 +444,15 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* ---- Sección de Tabla y Resultados ---- */
 .tabla-section {
-  margin-top: 18px;
-  padding: 0 0 24px;
+  margin-top: 2vh;
+  padding: 0 0 3vh;
   overflow: hidden;
 }
 
 /* Barra de progreso de actualización */
 .progress-bar-container {
   width: 100%; height: 0.5vh;
-  background: var(--border-soft);
-  border-radius: 3px 3px 0 0; overflow: hidden;
+  background: var(--border-soft); overflow: hidden;
 }
 .progress-bar {
   height: 100%; width: 0%;
@@ -463,8 +461,8 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .tabla-header {
   display: flex; justify-content: space-between; align-items: center;
-  gap: 14px;
-  padding: 18px 24px 0;
+  gap: 1.5vw;
+  padding: 2vh 2vw 0;
 }
 .tabla-header h2 {
   margin: 0;
@@ -478,11 +476,11 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* Buscador interno */
 .search-input {
-  padding: 7px 12px;
+  padding: 0.8vh 0.8vw;
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text);
   font-size: clamp(0.84rem, 0.3vw + 0.72rem, 0.93rem);
-  width: clamp(140px, 18vw, 220px);
+  width: 15vw;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .search-input:focus {
@@ -492,7 +490,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .search-input::placeholder { color: var(--text-muted); }
 
 #estadoTabla {
-  margin: 0 24px 14px;
+  margin: 0 2vw 1.5vh;
   color: var(--text-muted);
   font-size: clamp(0.88rem, 0.4vw + 0.74rem, 0.98rem);
   min-height: 1.4em;
@@ -505,7 +503,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* ---- Tabla wrapper ---- */
 .tabla-wrapper {
-  overflow-x: auto; margin: 24px 24px;
+  overflow-x: auto; margin: 2vh 2vw;
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -517,7 +515,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 #tablaDatos thead { background: var(--surface-soft); }
 #tablaDatos th,
 #tablaDatos td {
-  padding: 11px 14px; text-align: left;
+  padding: 1.2vh 1vw; text-align: left;
   font-size: clamp(0.82rem, 0.32vw + 0.7rem, 0.96rem);
   border-bottom: 1px solid var(--border-soft); white-space: nowrap;
   transition: background-color 0.2s ease;
@@ -538,6 +536,20 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* Efecto visual al actualizar datos en una fila */
 .fila-cambiada { animation: flashCambio 2.5s ease-out forwards; }
+
+/* Colores de fondo para filas según estado */
+.row-verde   { background-color: rgba(40, 167, 69, 0.12) !important; }
+.row-verde:nth-child(even) { background-color: rgba(40, 167, 69, 0.16) !important; }
+
+.row-rojo    { background-color: rgba(161, 7, 2, 0.12) !important; }
+.row-rojo:nth-child(even) { background-color: rgba(161, 7, 2, 0.16) !important; }
+
+.row-naranja { background-color: rgba(245, 138, 7, 0.16) !important; cursor: pointer; }
+.row-naranja:nth-child(even) { background-color: rgba(245, 138, 7, 0.20) !important; }
+.row-naranja:hover { background-color: rgba(245, 138, 7, 0.24) !important }
+
+.row-gris    { background-color: rgba(110, 110, 115, 0.16) !important; }
+.row-gris:nth-child(even) { background-color: rgba(110, 110, 115, 0.20) !important; }
 
 /* ---- Pills (Badges) de estado ---- */
 .estado-pill {
@@ -579,21 +591,24 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: 1fr auto;
-  gap: clamp(12px, 2vw, 28px);
+  gap: 0.5vw;
   height: 100%; min-height: 0;
+  padding-bottom: 0;
 }
 
 .presentacion-errores-footer {
   grid-column: span 2;
-  border-top: 3px solid #f58a07;
-  margin-top: 1vh; padding: 1.5vh;
+  border-top: 0.5vh solid #f58a07;
+  margin-top: 1vh; padding: 2.5vh;
   min-height: 20vh;
+  max-height: 20vh;
   background: rgba(243, 156, 18, 0.08);
   border-radius: var(--radius-md);
+  padding-bottom: 0;
 }
 .presentacion-errores-columnas {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(10px, 2vw, 40px);
+  gap: 0.5vw;
 }
 .presentacion-columna-errores { display: flex; flex-direction: column; }
 .presentacion-errores-header {
@@ -610,14 +625,13 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .presentacion-errores-pagination {
   color: var(--text-muted);
   font-size: 1.7vh;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;}
 .presentacion-error-item {
   font-size: 1.8vh; margin-bottom: 0.5vh;
   color: var(--text);
-  border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 4px;
+  border-bottom: 0.2vh solid var(--border-soft);
+  padding-bottom: 0.1vh;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -686,7 +700,7 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* Progress bar arriba del todo */
 #tablaSection:fullscreen .progress-bar-container {
-  border-radius: 0; height: 0.5vh;
+  border-radius: 0; height: 1vh;
 }
 
 /* KPI como header de la presentación */
@@ -694,18 +708,22 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   display: grid !important;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.2vh;
+  max-height: fit-content !important;
   padding: 0 2vh 1vh;
   flex-shrink: 0;
 }
 #tablaSection:fullscreen .kpi-card {
   padding: 1.4vh 2vh;
+  overflow: hidden;
 }
 #tablaSection:fullscreen .kpi-value {
-  font-size: clamp(1.6rem, 3.5vh, 3.5vh);
-  margin-bottom: 4px;
+  font-size: 3.5vh;
+  margin-bottom: 0.25vw;
 }
+
 #tablaSection:fullscreen .kpi-label {
-  font-size: clamp(0.7rem, 1.6vh, 1.6vh);
+  font-size: 1.6vh;
+  white-space: nowrap;
 }
 
 /* Logo SicoLares visible solo en fullscreen */
@@ -734,14 +752,22 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 #tablaSection:fullscreen #estadoTabla           { display: none; }
 #tablaSection:fullscreen .progress-bar-container { flex-shrink: 0; }
 
-#tablaSection:fullscreen #paginacionInfo { font-size: 2.4vh; }
-#tablaSection:fullscreen button          { font-size: 2vh; padding: 1vh 2.2vh; }
+#tablaSection:fullscreen #paginacionInfo { font-size: 2.4vh; max-width: fit-content; }
+#tablaSection:fullscreen button          { font-size: 2vh; padding: 1vh 2.2vh; max-width: fit-content; gap: 0.2vw; }
 
 /* La lista de presentación ocupa el espacio restante */
 #tablaSection:fullscreen .presentacion-lista {
   flex: 1; width: 100%;
-  padding: 0 2vh 1.5vh;
+  padding: 0 0 1.5vh;
   min-height: 0;
+}
+
+#tablaSection:fullscreen .presentacion-lista .presentacion-columna {
+  padding: 0 2vh 0 0;
+}
+
+#tablaSection:fullscreen .presentacion-lista .presentacion-columna:nth-child(odd) {
+  padding: 0 0 0 2vh;
 }
 
 #tablaSection:fullscreen .tabla-wrapper { flex: 1; overflow: auto; }
@@ -769,9 +795,6 @@ button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
   #estadoTabla { margin: 0 16px 12px; }
   .tabla-wrapper { margin: 0 16px; }
   .kpi-section { padding: 14px 16px 0; }
-  .tabla-header, .tabla-acciones, .botones {
-    flex-direction: column; align-items: stretch;
-  }
   button { width: 100%; justify-content: center; }
   #paginacionInfo { white-space: normal; }
   #tablaDatos { min-width: 600px; }

@@ -11,12 +11,44 @@ import { fetchAndRenderData } from './api.js';
 
 /**
  * Calcula dinámicamente el número máximo de líneas que pueden mostrarse en pantalla completa.
- * El cálculo se basa en la altura del viewport para asegurar que el contenido no desborde.
+ * Mide el espacio disponible en el layout de presentación y el tamaño real de las líneas
+ * según el CSS aplicado, optimizando el uso de pantalla en cualquier resolución.
  * @returns {void}
  */
 export function calcularMaxLineas() {
-    const calculo = Math.floor(window.innerHeight / 54);
-    appState.maxLineasPresentacion = Math.min(36, Math.max(20, calculo));
+    // Si no estamos en modo presentación, no es necesario un cálculo preciso.
+    if (!appState.modoPresentacion) {
+        appState.maxLineasPresentacion = 20;
+        return;
+    }
+
+    // 1. Medimos la altura de una línea "tipo" (una máquina) inyectando un elemento invisible.
+    // Esto garantiza que capturamos el tamaño real dictado por el CSS (vh, paddings, bordes).
+    const dummy = document.createElement("div");
+    dummy.className = "linea-maquina";
+    dummy.style.visibility = "hidden";
+    dummy.style.position = "absolute";
+    dummy.innerHTML = '<span class="maquina-badge">✓</span>M';
+    document.body.appendChild(dummy);
+    const hLinea = dummy.getBoundingClientRect().height || 45; // Fallback por si acaso
+    document.body.removeChild(dummy);
+
+    // 2. Calculamos el espacio vertical disponible para las columnas de máquinas.
+    // Medimos las secciones que ocupan espacio fijo en la vista de pantalla completa.
+    const heightKpi = dom.kpiSection?.offsetHeight || 0;
+    const heightHeader = dom.tablaSection.querySelector(".tabla-header")?.offsetHeight || 0;
+    const heightProgress = dom.progressBar?.parentElement?.offsetHeight || 0;
+    
+    // El footer de errores solo resta espacio si hay errores activos que mostrar.
+    const tieneErrores = obtenerErroresActivos(appState.datosTabla).length > 0;
+    const heightFooter = tieneErrores ? (window.innerHeight * 0.25) : 0; // El footer ocupa ~25vh (base + padding + margen)
+
+    const marginSafety = 30; // Margen de seguridad para evitar desbordamientos por tipos de línea más altos
+    const availableHeight = window.innerHeight - heightKpi - heightHeader - heightProgress - heightFooter - marginSafety;
+
+    // 3. Calculamos cuántas líneas caben físicamente y aplicamos un límite mínimo lógico.
+    const calculo = Math.floor(availableHeight / hLinea);
+    appState.maxLineasPresentacion = Math.max(24, calculo);
   }
 
   
@@ -219,11 +251,26 @@ export function renderPresentacion() {
 
     dom.paginacionInfo.textContent = `Página ${appState.paginaPresentacionActual + 1} de ${appState.paginasPresentacion.length}`;
 
-    // Attach listeners to footer errors
+    // Attach listeners to footer errors and machines
     dom.presentacionLista.querySelectorAll(".clickable-error").forEach(item => {
       item.addEventListener("click", (e) => {
         abrirModalError(errPagina[e.currentTarget.dataset.erridx % ERR_POR_PAGINA]);
       });
+    });
+
+    dom.presentacionLista.querySelectorAll(".linea-maquina.clickable").forEach(item => {
+        item.addEventListener("click", (e) => {
+            const ns = e.currentTarget.dataset.ns;
+            const machine = appState.datosTabla.find(m => m.NumeroSerie === ns);
+            if (machine) {
+                // Si tiene errores activos, abrimos el primero. Si no, abrimos modal para registrar nuevo.
+                const activeLog = (machine.Logs || []).find(l => !esFalso(l.Activo));
+                abrirModalError({ 
+                    maquina: machine, 
+                    log: activeLog || { NumeroSerie: ns } 
+                });
+            }
+        });
     });
   }
 
@@ -241,7 +288,10 @@ function renderItem(item) {
     if (item.tipo === "maquina") {
       const colorMap = { "estado-verde": "#28a745", "estado-rojo": "#a10702", "estado-naranja": "#f58a07", "estado-gris": "#6e6e73" };
       const bg = colorMap[item.estado.clase] || "#6e6e73";
-      return `<div class="linea-maquina" style="background:${bg}"><span class="maquina-badge">${escapeHtml(item.estado.texto)}</span>${escapeHtml(item.texto)}</div>`;
+      // Hacemos que la fila de la máquina sea clicable en presentación
+      return `<div class="linea-maquina clickable" style="background:${bg}; cursor:pointer" data-ns="${escapeHtml(item.fila.NumeroSerie)}">
+        <span class="maquina-badge">${escapeHtml(item.estado.texto)}</span>${escapeHtml(item.texto)}
+      </div>`;
     }
     return "";
   }

@@ -3,8 +3,8 @@
  */
 import { appState } from './state.js';
 import * as dom from './dom.js';
-import { renderKPIs, renderLogsNormal, mostrarSkeleton } from './ui.js';
-import { getEstadoControl, renderTabla } from './table.js';
+import { renderKPIs, renderLogsNormal, mostrarSkeleton, actualizarDatosModal, limpiarTrends } from './ui.js';
+import { getEstadoControl, renderTabla, getTooltipEstado } from './table.js';
 import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion } from './presentation.js';
 
 // --- Inicialización ---
@@ -94,20 +94,46 @@ export async function fetchAndRenderData() {
         `datos.php?modo=maquinas&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`,
         { signal: appState.currentController.signal }
       );
-      const data = await res.json();
+      const response = await res.json();
+
+      // Si los datos son idénticos a los anteriores, no hacemos nada.
+      const dataString = JSON.stringify(response);
+      if (dataString === appState.lastDataHash) {
+          limpiarTrends();
+          return; // Salimos temprano para ahorrar recursos de CPU y renderizado
+      }
+      appState.lastDataHash = dataString;
+
+      // Reconstruimos el array de objetos a partir del formato optimizado (cols/rows)
+      let data = response;
+      if (response && response.cols && response.rows) {
+          const colCount = response.cols.length;
+          data = response.rows.map(row => {
+              const obj = {};
+              // Usamos un bucle for clásico para máxima velocidad en la reconstrucción
+              for (let i = 0; i < colCount; i++) {
+                  const colName = response.cols[i];
+                  obj[colName] = row[i];
+              }
+              // Pre-calculamos el estado una sola vez para ahorrar CPU en renderizados
+              obj._estado = getEstadoControl(obj);
+              obj._tooltip = getTooltipEstado(obj);
+              return obj;
+          });
+      }
 
       // Validación de seguridad: Si el backend devuelve un objeto de error en lugar de un array
       if (!Array.isArray(data)) throw new Error(data.error || "La respuesta del servidor no es un listado válido.");
 
       // Identificamos el estado de cada máquina para comparar cambios
       const nuevosEstados = {};
-      data.forEach(m => { nuevosEstados[m.NumeroSerie] = getEstadoControl(m).clase; });
+      data.forEach(m => { nuevosEstados[m.NumeroSerie] = m._estado.clase; });
       
       const maquinasCambiadas = new Set();
       if (Object.keys(appState.prevEstados).length > 0) {
         data.forEach(m => {
           // Si el estado visual (clase CSS) ha cambiado, la añadimos para animar la fila
-          if (appState.prevEstados[m.NumeroSerie] && appState.prevEstados[m.NumeroSerie] !== nuevosEstados[m.NumeroSerie]) {
+          if (appState.prevEstados[m.NumeroSerie] && appState.prevEstados[m.NumeroSerie] !== m._estado.clase) {
             maquinasCambiadas.add(m.NumeroSerie);
           }
         });
@@ -118,7 +144,7 @@ export async function fetchAndRenderData() {
       // Si es la primera carga con datos, extraemos dinámicamente las columnas de la tabla
       if (data.length > 0 && appState.columnasTabla.length === 0) {
         appState.columnasTabla = Object.keys(data[0]).filter(col =>
-          col !== "UltimoControl" && col !== "MonitorizarEstado" &&
+          !col.startsWith('_') && col !== "UltimoControl" && col !== "MonitorizarEstado" &&
           col !== "NumeroSerie" && col !== "MonitorizarAlertas" && col !== "Logs"
         );
       } else if (data.length === 0) {
@@ -141,6 +167,11 @@ export async function fetchAndRenderData() {
       } else {
         renderTabla(maquinasCambiadas);
         dom.tabla.style.display = "table";
+      }
+      
+      // Si el modal de un error está abierto, actualizamos su información en tiempo real
+      if (appState.currentModalData) {
+        actualizarDatosModal();
       }
 
       // Actualizamos el mensaje de estado en la parte inferior de los filtros

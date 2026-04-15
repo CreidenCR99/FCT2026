@@ -41,7 +41,7 @@ import './table.js';
     dom.logsNormalSection.hidden = true;
     dom.presentacionLista.hidden = true;
     dom.presentacionLista.innerHTML = "";
-    appState.columnasTabla = []; appState.prevEstados = {};
+    appState.columnasTabla = []; appState.prevEstados = {}; appState.lastDataHash = "";
     detenerActualizacionEstado();
     await fetchAndRenderData();
     iniciarActualizacionEstado();
@@ -50,4 +50,3 @@ import './table.js';
 // Inicialización
 cargarOrganismos(); // Carga inicial de organismos en el selector
 cargarProvincias(); // Carga inicial de provincias en el selector
-

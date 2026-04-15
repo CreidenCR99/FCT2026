@@ -3,7 +3,7 @@
  */
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
-import { getEstadoControl, esFalso, getClaseConexion } from './table.js';
+import { getEstadoControl, esFalso, getClaseConexion, parseUltimoControl } from './table.js';
 import { fetchAndRenderData } from './api.js';
 import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion, salirModoPresentation } from './presentation.js';
 
@@ -24,6 +24,24 @@ export function mostrarSkeleton() {
 
   
 // ---- KPIs ----
+
+/**
+ * Elimina visualmente los indicadores de tendencia (flechas) de los KPIs.
+ * Se invoca cuando los datos no han cambiado en el último ciclo de actualización.
+ * @returns {void}
+ */
+export function limpiarTrends() {
+    const trends = dom.kpiSection.querySelectorAll('.kpi-trend');
+    trends.forEach(trend => {
+        if (trend.dataset.exiting) return;
+        trend.dataset.exiting = "true";
+        
+        // Aplicamos la animación de salida definida en style.css
+        trend.style.animation = "trendExit 0.2s ease-in forwards";
+        // Eliminamos físicamente del DOM tras la animación para mantenerlo limpio
+        setTimeout(() => trend.remove(), 200);
+    });
+}
   
 /**
  * Calcula y renderiza las tarjetas de indicadores clave (KPIs) basándose en los datos recibidos.
@@ -32,19 +50,22 @@ export function mostrarSkeleton() {
  * @returns {void}
  */
 export function renderKPIs(data) {
-    const monitorizadas = data.filter(m => !esFalso(m.MonitorizarEstado));
-    const total  = monitorizadas.length;
-    const ok     = monitorizadas.filter(m => getClaseConexion(m) === "estado-verde").length;
-    const alerta = monitorizadas.filter(m => getClaseConexion(m) === "estado-rojo").length;
+    let total = 0, ok = 0, alerta = 0, log = 0;
 
-    // Contar entradas de log fallidas de TODAS las máquinas del dataset completo
-    // Solo si MonitorizarAlertas es true (1)
-    const log = data
-      .filter(m => !esFalso(m.MonitorizarAlertas))
-      .reduce((acc, m) => {
-        const logsFallo = (m.Logs || []).filter(l => !esFalso(l.Activo));
-        return acc + logsFallo.length;
-      }, 0);
+    for (let i = 0; i < data.length; i++) {
+        const m = data[i];
+        if (!esFalso(m.MonitorizarEstado)) {
+            total++;
+            const claseCon = getClaseConexion(m);
+            if (claseCon === "estado-verde") ok++;
+            else if (claseCon === "estado-rojo") alerta++;
+        }
+        
+        if (!esFalso(m.MonitorizarAlertas)) {
+            const logsActivos = (m.Logs || []).filter(l => !esFalso(l.Activo)).length;
+            log += logsActivos;
+        }
+    }
 
     const prev = appState.prevKpis;
     const current = { total, ok, alerta, log };
@@ -61,7 +82,7 @@ export function renderKPIs(data) {
         return `<span class="kpi-trend" style="color:${color}" aria-hidden="true">${isInc ? '▲' : '▼'}</span>`;
     };
 
-    dom.kpiSection.innerHTML = `
+    const newHTML = `
       <div class="kpi-card" aria-label="${total} máquinas en total">
         <div class="kpi-row"><div id="kpi-total-val" class="kpi-value">${prev.total}</div>${getTrend(total, prev.total, "total")}</div>
         <div class="kpi-label">≕ Máquinas listadas</div>
@@ -79,6 +100,12 @@ export function renderKPIs(data) {
         <div class="kpi-label">⚠ Errores activos</div>
       </div>
     `;
+
+    // Usamos morphdom para que los elementos que no cambian (como las flechas de tendencia
+    // que están en medio de una animación) no sean destruidos.
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = newHTML;
+    morphdom(dom.kpiSection, tempDiv, { childrenOnly: true });
 
     // Animamos cada número si ha cambiado respecto al valor anterior
     if (current.total !== prev.total) animateNumber("kpi-total-val", prev.total, current.total, "total");
@@ -189,32 +216,42 @@ export function obtenerErroresActivos(data) {
 export function cerrarModal() {
     dom.modalLog.style.display = "none";
     // Reactivamos el scroll
+    appState.currentModalData = null;
     document.body.style.overflow = "";
     // Si estamos en fullscreen, asegurar que el contenedor de la tabla tampoco bloquee
     if (document.fullscreenElement) dom.tablaSection.style.overflow = "";
 }
 
-export function abrirModalError(errorObj) {
-    // Asegurar ubicación del modal para correcto centrado y visibilidad
-    if (document.fullscreenElement) {
-        if (dom.modalLog.parentElement !== dom.tablaSection) dom.tablaSection.appendChild(dom.modalLog);
-    } else {
-        if (dom.modalLog.parentElement !== document.body) document.body.appendChild(dom.modalLog);
-    }
+/**
+ * Actualiza el contenido del modal basándose en el log seleccionado en appState.currentModalLogIndex
+ */
+function renderContenidoModal() {
+    const log = appState.currentModalLogs[appState.currentModalLogIndex];
+    const machine = appState.datosTabla.find(m => m.NumeroSerie === appState.currentModalData.numeroSerie);
+    
+    if (!log || !machine) return;
 
-    // Bloquear scroll del body
-    document.body.style.overflow = "hidden";
-    if (document.fullscreenElement) dom.tablaSection.style.overflow = "hidden";
-
-    const isNew = !errorObj.log.ID;
+    const isNew = !log.ID;
     document.getElementById("modalTitle").textContent = isNew ? "Registrar Nuevo Error" : "Detalles del Error";
     
-    document.getElementById("modalMaquinaDesc").textContent = errorObj.maquina.Descripcion;
-    document.getElementById("modalMaquinaSN").textContent = errorObj.maquina.NumeroSerie;
-    document.getElementById("modalMaquinaNS_hidden").value = errorObj.maquina.NumeroSerie;
-    document.getElementById("modalOrganismo").textContent = errorObj.maquina.Organismo;
-    document.getElementById("modalProvincia").textContent = errorObj.maquina.Provincia;
-    document.getElementById("modalCliente").textContent = errorObj.maquina.Cliente;
+    // Visibilidad y lógica de navegación
+    const navBtns = document.getElementById("modalNavBtns");
+    if (navBtns) {
+        const numErrores = appState.currentModalLogs.length;
+        navBtns.style.display = numErrores > 1 ? "flex" : "none";
+        if (numErrores > 1) {
+            document.getElementById("modalTitle").textContent += ` (${appState.currentModalLogIndex + 1}/${numErrores})`;
+        }
+    }
+
+    document.getElementById("modalMaquinaDesc").textContent = machine.Descripcion;
+    document.getElementById("modalMaquinaSN").textContent = machine.NumeroSerie;
+    document.getElementById("modalMaquinaNS_hidden").value = machine.NumeroSerie;
+    document.getElementById("modalOrganismo").textContent = machine.Organismo;
+    document.getElementById("modalProvincia").textContent = machine.Provincia;
+    document.getElementById("modalCliente").textContent = machine.Cliente;
+    
+    actualizarDatosModal(); // Cargar datos dinámicos (Última conexión)
 
     const msgInput = document.getElementById("modalMensajeInput");
     const msgStatic = document.getElementById("modalErrorMsg");
@@ -235,29 +272,84 @@ export function abrirModalError(errorObj) {
         msgInput.value = "";
     } else {
         msgStatic.parentElement.style.display = "";
-        msgCont.style.display = "none";
-        fechaHoraCont.style.display = "none";
-        msgInput.required = false;
-        document.getElementById("modalFecha").required = false;
-        document.getElementById("modalHora").required = false;
-        msgStatic.textContent = errorObj.log.Mensaje;
+        msgCont.style.display = "";
+        fechaHoraCont.style.display = "";
+        msgInput.required = true;
+        document.getElementById("modalFecha").required = true;
+        document.getElementById("modalHora").required = true;
+        
+        msgInput.value = log.Mensaje || "";
+        msgStatic.textContent = log.Mensaje;
+
+        if (log.TimeStamp && String(log.TimeStamp).length >= 12) {
+            const ts = String(log.TimeStamp);
+            document.getElementById("modalFecha").value = `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}`;
+            document.getElementById("modalHora").value = `${ts.slice(8, 10)}:${ts.slice(10, 12)}`;
+        }
     }
 
     // Mostrar información adicional del error en el modal
     const elCodigo = document.getElementById("modalCodigoError");
-    if (elCodigo) elCodigo.textContent = isNew ? "-" : (errorObj.log.CodigoError || "-");
+    if (elCodigo) elCodigo.textContent = isNew ? "-" : (log.CodigoError || "-");
     const elTipo = document.getElementById("modalTipoMaquina");
-    if (elTipo) elTipo.textContent = isNew ? "-" : (errorObj.log.TipoMaquina || "-");
+    if (elTipo) elTipo.textContent = isNew ? "-" : (log.TipoMaquina || "-");
     const elTS = document.getElementById("modalFechaHora");
-    if (elTS) elTS.textContent = isNew ? "-" : formatTimeStamp(errorObj.log.TimeStamp);
+    if (elTS) elTS.textContent = isNew ? "-" : formatTimeStamp(log.TimeStamp);
 
-    document.getElementById("modalLogId").value = errorObj.log.ID || "";
-    // Mapeo inverso para el select del UI: Activo 1 (Error) -> Value 0. Activo 0 (OK) -> Value 1.
-    document.getElementById("modalEstadoError").value = !esFalso(errorObj.log.Activo) ? "0" : "1";
-    document.getElementById("modalObservaciones").value = errorObj.log.Observaciones || "";
+    document.getElementById("modalLogId").value = log.ID || "";
+    document.getElementById("modalEstadoError").value = !esFalso(log.Activo) ? "0" : "1";
+    document.getElementById("modalObservaciones").value = log.Observaciones || "";
+}
+
+export function abrirModalError(errorObj) {
+    // Asegurar ubicación del modal para correcto centrado y visibilidad
+    if (document.fullscreenElement) {
+        if (dom.modalLog.parentElement !== dom.tablaSection) dom.tablaSection.appendChild(dom.modalLog);
+    } else {
+        if (dom.modalLog.parentElement !== document.body) document.body.appendChild(dom.modalLog);
+    }
+
+    // Guardamos referencia para actualizaciones en tiempo real
+    appState.currentModalData = { numeroSerie: errorObj.maquina.NumeroSerie, logId: errorObj.log.ID };
+
+    // Preparar lista de errores para navegación (solo errores activos de esta máquina)
+    const activeLogs = (errorObj.maquina.Logs || []).filter(l => !esFalso(l.Activo));
+    // Si el log que abrimos es histórico (no activo) o nuevo, lo incluimos en la lista temporal
+    if (errorObj.log.ID && !activeLogs.some(l => l.ID === errorObj.log.ID)) {
+        activeLogs.unshift(errorObj.log);
+    }
+    appState.currentModalLogs = activeLogs.length > 0 ? activeLogs : [errorObj.log];
+    appState.currentModalLogIndex = appState.currentModalLogs.findIndex(l => l.ID === errorObj.log.ID);
+    if (appState.currentModalLogIndex === -1) appState.currentModalLogIndex = 0;
+
+    // Bloquear scroll del body
+    document.body.style.overflow = "hidden";
+    if (document.fullscreenElement) dom.tablaSection.style.overflow = "hidden";
+
+    renderContenidoModal();
     dom.modalLog.style.display = "flex";
   }
 
+/**
+ * Actualiza los campos dinámicos del modal (como la última conexión)
+ * buscando los datos más recientes en el estado global.
+ */
+export function actualizarDatosModal() {
+    if (!appState.currentModalData) return;
+    
+    const machine = appState.datosTabla.find(m => m.NumeroSerie === appState.currentModalData.numeroSerie);
+    if (!machine) return;
+
+    const elUC = document.getElementById("modalUltimaConexion");
+    if (elUC) {
+        const ts = machine.UltimoControl;
+        if (!ts || String(ts).length < 12) elUC.textContent = ts || "-";
+        else {
+            const s = String(ts);
+            elUC.textContent = `${s.slice(6, 8)}/${s.slice(4, 6)}/${s.slice(0, 4)} ${s.slice(8, 10)}:${s.slice(10, 12)}`;
+        }
+    }
+}
   
 /**
  * Renderiza la sección de "Errores Activos" en la vista normal de la aplicación.
@@ -273,7 +365,7 @@ export function renderLogsNormal(data) {
       return;
     }
 
-    dom.logsNormalSection.innerHTML = `
+    const logsHTML = `
       <div class="logs-normal-titulo">ERRORES ACTIVOS</div>
       <div class="logs-normal-grid" id="logsGrid">
         ${errores.map((e, idx) => `
@@ -284,6 +376,11 @@ export function renderLogsNormal(data) {
         `).join("")}
       </div>
     `;
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = logsHTML;
+    morphdom(dom.logsNormalSection, tempDiv, { childrenOnly: true });
+
     dom.logsNormalSection.hidden = false;
 
     dom.logsNormalSection.querySelectorAll(".log-item-clickable").forEach(item => {
@@ -334,6 +431,22 @@ export function detenerProgressBar() {
   window.addEventListener("click", e => { if (e.target === dom.modalLog) cerrarModal(); });
 
   
+  // Navegación de errores mediante los botones superiores del modal
+  document.getElementById("prevErrorBtn")?.addEventListener("click", () => {
+    if (appState.currentModalLogIndex > 0) {
+        appState.currentModalLogIndex--;
+        appState.currentModalData.logId = appState.currentModalLogs[appState.currentModalLogIndex].ID;
+        renderContenidoModal();
+    }
+  });
+  document.getElementById("nextErrorBtn")?.addEventListener("click", () => {
+    if (appState.currentModalLogIndex < appState.currentModalLogs.length - 1) {
+        appState.currentModalLogIndex++;
+        appState.currentModalData.logId = appState.currentModalLogs[appState.currentModalLogIndex].ID;
+        renderContenidoModal();
+    }
+  });
+
 // ---- Lógica Volver Arriba ----
 
   window.addEventListener("scroll", () => {
@@ -362,19 +475,18 @@ export function detenerProgressBar() {
     const idLog = formData.get("id_log");
     const modo = idLog ? "actualizar_log" : "crear_log";
     
-    if (modo === "crear_log") {
-      const fechaRaw = document.getElementById("modalFecha").value;
-      const horaRaw = document.getElementById("modalHora").value;
-      
-      const fechaSeleccionada = new Date(`${fechaRaw}T${horaRaw}`);
-      if (fechaSeleccionada > new Date()) {
-        alert("No es posible registrar un error con una fecha u hora futura.");
-        return;
-      }
-
-      formData.set("fecha", fechaRaw.replace(/-/g, ""));
-      formData.set("hora", horaRaw);
+    const fechaRaw = document.getElementById("modalFecha").value;
+    const horaRaw = document.getElementById("modalHora").value;
+    
+    const fechaSeleccionada = new Date(`${fechaRaw}T${horaRaw}`);
+    if (fechaSeleccionada > new Date()) {
+      Swal.fire('Error', "No es posible registrar un cambio con una fecha u hora futura.", 'error');
+      return;
     }
+
+    formData.set("fecha", fechaRaw.replace(/-/g, ""));
+    formData.set("hora", horaRaw);
+    formData.set("mensaje", document.getElementById("modalMensajeInput").value);
 
     const btnSubmit = dom.formEdicionLog.querySelector('button[type="submit"]');
     
@@ -387,15 +499,22 @@ export function detenerProgressBar() {
       const result = await res.json();
 
       if (result.success) {
+        appState.lastDataHash = "";
         await fetchAndRenderData();
-        alert("Estado de error actualizado correctamente.");
+        Swal.fire({
+          title: '¡Actualizado!',
+          text: 'El estado del error se ha guardado correctamente.',
+          icon: 'success',
+          confirmButtonColor: 'var(--primary)',
+          timer: 2000
+        });
         cerrarModal();
       } else {
         throw new Error(result.error || "Error desconocido al actualizar");
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("No se pudo actualizar el log: " + error.message);
+      Swal.fire('Error', error.message, 'error');
     } finally {
       btnSubmit.disabled = false;
     }

@@ -3,14 +3,18 @@
  */
 import { appState } from './state.js';
 import * as dom from './dom.js';
-import { cerrarModal } from './ui.js';
+import { cerrarModal, abrirModalError } from './ui.js';
 import { salirModoPresentation, renderPresentacion } from './presentation.js';
 
 // --- Búsqueda en tabla ---
 
+  let searchTimeout;
   dom.searchInput.addEventListener("input", () => {
-    appState.filtroTexto = dom.searchInput.value.trim().toLowerCase();
-    if (appState.datosTabla.length > 0) renderTabla();
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      appState.filtroTexto = dom.searchInput.value.trim().toLowerCase();
+      if (appState.datosTabla.length > 0) renderTabla();
+    }, 250); // 250ms de pausa antes de filtrar
   });
 
   
@@ -183,18 +187,42 @@ export function renderTabla(maquinasCambiadas = new Set()) {
       th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSortClick(th.dataset.col); } });
     });
 
-    dom.tbody.innerHTML = "";
+    // Usar un string builder y una sola inserción al final
+    let htmlBuffer = "";
     datosFiltrados.forEach(fila => {
-      const estado  = getEstadoControl(fila);
-      const tooltip = getTooltipEstado(fila);
-      const tr = document.createElement("tr");
-      if (maquinasCambiadas.has(fila.NumeroSerie)) tr.classList.add("fila-cambiada");
-      tr.innerHTML = `
-        ${appState.columnasTabla.map(col => `<td>${fila[col] ?? ""}</td>`).join("")}
-        <td><span class="estado-pill ${estado.clase}" title="${tooltip}" aria-label="Estado: ${estado.texto}">${estado.texto}</span></td>
-      `;
-      dom.tbody.appendChild(tr);
+      const estado = fila._estado;
+      const colorSuffix = estado.clase.split('-')[1]; // verde, rojo, naranja, gris
+      const esCambio = maquinasCambiadas.has(fila.NumeroSerie) ? " fila-cambiada" : "";
+      const esNaranja = estado.clase === "estado-naranja" ? ' title="Click para gestionar error" style="cursor:pointer" data-clickable="true"' : "";
+      
+      htmlBuffer += `
+        <tr class="row-${colorSuffix}${esCambio}"${esNaranja} data-ns="${fila.NumeroSerie}">
+          ${appState.columnasTabla.map(col => `<td>${fila[col] ?? ""}</td>`).join("")}
+          <td>
+            <span class="estado-pill ${estado.clase}" title="${fila._tooltip}" aria-label="Estado: ${estado.texto}">
+              ${estado.texto}
+            </span>
+          </td>
+        </tr>`;
     });
+
+    // En lugar de reemplazar el HTML, "parcheamos" el DOM existente.
+    // Esto mantiene el scroll y el foco del usuario incluso durante el refresco de 7.5s.
+    const tempTbody = document.createElement('tbody');
+    tempTbody.innerHTML = htmlBuffer;
+    morphdom(dom.tbody, tempTbody);
+
+    // Delegación de eventos para las filas naranjas (más eficiente que un listener por fila)
+    dom.tbody.onclick = (e) => {
+        const tr = e.target.closest('tr[data-clickable="true"]');
+        if (tr) {
+            const ns = tr.dataset.ns;
+            const fila = appState.datosTabla.find(m => m.NumeroSerie === ns);
+            const activeLog = (fila.Logs || []).find(l => !esFalso(l.Activo));
+            if (activeLog) abrirModalError({ maquina: fila, log: activeLog });
+        }
+    };
+
     dom.exportCsvBtn.addEventListener("click", exportarCSV);
   }
 
