@@ -4,7 +4,7 @@
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { getEstadoControl, esFalso, getClaseConexion, parseUltimoControl } from './table.js';
-import { fetchAndRenderData } from './api.js';
+import { fetchAndRenderData, cargarErrores } from './api.js';
 import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion, salirModoPresentation } from './presentation.js';
 
 // ---- Skeleton ----
@@ -15,9 +15,9 @@ import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion, sa
  * @returns {void}
  */
 export function mostrarSkeleton() {
-    dom.estadoTabla.innerHTML = `<div class="skeleton skeleton-text" style="width:200px;height:1em"></div>`;
+    dom.estadoTabla.innerHTML = `<div class="skeleton skeleton-text" style="width:10vw;height:1.6vh"></div>`;
     dom.kpiSection.innerHTML = Array(4).fill(0).map(() =>
-      `<div class="kpi-card"><div class="skeleton skeleton-text" style="width:50px;height:2.4em;margin-bottom:10px"></div><div class="skeleton skeleton-text" style="width:100px"></div></div>`
+      `<div class="kpi-card"><div class="skeleton skeleton-text" style="width:5vw;height:4vh;margin-bottom:1vh"></div><div class="skeleton skeleton-text" style="width:10vw"></div></div>`
     ).join("");
     dom.kpiSection.hidden = false;
   }
@@ -218,6 +218,8 @@ export function cerrarModal() {
     // Reactivamos el scroll
     appState.currentModalData = null;
     document.body.style.overflow = "";
+    // Limpiar validaciones visuales
+    dom.formEdicionLog.querySelectorAll('.touched').forEach(el => el.classList.remove('touched'));
     // Si estamos en fullscreen, asegurar que el contenedor de la tabla tampoco bloquee
     if (document.fullscreenElement) dom.tablaSection.style.overflow = "";
 }
@@ -234,14 +236,13 @@ function renderContenidoModal() {
     const isNew = !log.ID;
     document.getElementById("modalTitle").textContent = isNew ? "Registrar Nuevo Error" : "Detalles del Error";
     
-    // Visibilidad y lógica de navegación
-    const navBtns = document.getElementById("modalNavBtns");
-    if (navBtns) {
+    // Visibilidad y lógica de navegación unificada
+    const navCont = document.getElementById("modalLogNav");
+    const countEl = document.getElementById("modalLogCount");
+    if (navCont && countEl) {
         const numErrores = appState.currentModalLogs.length;
-        navBtns.style.display = numErrores > 1 ? "flex" : "none";
-        if (numErrores > 1) {
-            document.getElementById("modalTitle").textContent += ` (${appState.currentModalLogIndex + 1}/${numErrores})`;
-        }
+        navCont.style.display = numErrores > 1 ? "flex" : "none";
+        countEl.textContent = `${appState.currentModalLogIndex + 1} / ${numErrores}`;
     }
 
     document.getElementById("modalMaquinaDesc").textContent = machine.Descripcion;
@@ -253,7 +254,7 @@ function renderContenidoModal() {
     
     actualizarDatosModal(); // Cargar datos dinámicos (Última conexión)
 
-    const msgInput = document.getElementById("modalMensajeInput");
+    const msgSelect = document.getElementById("modalCodigoErrorSelect");
     const msgStatic = document.getElementById("modalErrorMsg");
     const fechaHoraCont = document.getElementById("containerFechaHora");
     const msgCont = document.getElementById("containerMensaje");
@@ -262,23 +263,27 @@ function renderContenidoModal() {
         msgStatic.parentElement.style.display = "none";
         msgCont.style.display = "";
         fechaHoraCont.style.display = "";
-        msgInput.required = true;
+        msgSelect.style.display = "";
+        msgSelect.required = true;
         document.getElementById("modalFecha").required = true;
         document.getElementById("modalHora").required = true;
         
         const now = new Date();
         document.getElementById("modalFecha").value = now.toLocaleDateString('en-CA');
         document.getElementById("modalHora").value = now.toTimeString().slice(0,5);
-        msgInput.value = "";
+        msgSelect.value = "";
     } else {
         msgStatic.parentElement.style.display = "";
-        msgCont.style.display = "";
-        fechaHoraCont.style.display = "";
-        msgInput.required = true;
-        document.getElementById("modalFecha").required = true;
-        document.getElementById("modalHora").required = true;
+        msgCont.style.display = "none";
+        fechaHoraCont.style.display = "none";
+        msgSelect.style.display = "none";
         
-        msgInput.value = log.Mensaje || "";
+        // Desactivamos la validación obligatoria cuando los campos están ocultos 
+        // para evitar el error de "form control is not focusable" del navegador.
+        msgSelect.required = false;
+        document.getElementById("modalFecha").required = false;
+        document.getElementById("modalHora").required = false;
+        
         msgStatic.textContent = log.Mensaje;
 
         if (log.TimeStamp && String(log.TimeStamp).length >= 12) {
@@ -292,13 +297,17 @@ function renderContenidoModal() {
     const elCodigo = document.getElementById("modalCodigoError");
     if (elCodigo) elCodigo.textContent = isNew ? "-" : (log.CodigoError || "-");
     const elTipo = document.getElementById("modalTipoMaquina");
-    if (elTipo) elTipo.textContent = isNew ? "-" : (log.TipoMaquina || "-");
+    if (elTipo) elTipo.textContent = machine.TipoMaquina || log.TipoMaquina || "-";
     const elTS = document.getElementById("modalFechaHora");
     if (elTS) elTS.textContent = isNew ? "-" : formatTimeStamp(log.TimeStamp);
 
     document.getElementById("modalLogId").value = log.ID || "";
-    document.getElementById("modalEstadoError").value = !esFalso(log.Activo) ? "0" : "1";
+    document.getElementById("modalTipoMaquina_hidden").value = machine.TipoMaquina || "";
+    document.getElementById("modalEstadoError").checked = !esFalso(log.Activo);
     document.getElementById("modalObservaciones").value = log.Observaciones || "";
+
+    // Actualizar estado del botón enviar
+    updateErrorSubmitBtnState();
 }
 
 export function abrirModalError(errorObj) {
@@ -321,6 +330,12 @@ export function abrirModalError(errorObj) {
     appState.currentModalLogs = activeLogs.length > 0 ? activeLogs : [errorObj.log];
     appState.currentModalLogIndex = appState.currentModalLogs.findIndex(l => l.ID === errorObj.log.ID);
     if (appState.currentModalLogIndex === -1) appState.currentModalLogIndex = 0;
+
+    // Cargar catálogo de errores si el selector está vacío (primer uso)
+    const msgSelect = document.getElementById("modalCodigoErrorSelect");
+    if (msgSelect && msgSelect.options.length <= 1) {
+        cargarErrores();
+    }
 
     // Bloquear scroll del body
     document.body.style.overflow = "hidden";
@@ -365,15 +380,22 @@ export function renderLogsNormal(data) {
       return;
     }
 
+    const isMinimized = appState.erroresMinimizados;
+
     const logsHTML = `
-      <div class="logs-normal-titulo">ERRORES ACTIVOS</div>
-      <div class="logs-normal-grid" id="logsGrid">
-        ${errores.map((e, idx) => `
-          <div class="log-item-clickable" data-idx="${idx}" title="Click para ver detalles y gestionar">
-            <strong style="color:#f58a07">${escapeHtml(e.maquina.Descripcion)}:</strong> 
-            ${escapeHtml(e.log.Mensaje)}
-          </div>
-        `).join("")}
+      <div class="logs-normal-titulo" id="toggleErroresHeader" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; user-select:none;">
+        <span>ERRORES ACTIVOS</span>
+        <span class="toggle-arrow ${isMinimized ? 'is-collapsed' : ''}">▼</span>
+      </div>
+      <div class="logs-expand-wrapper ${isMinimized ? 'is-minimized' : ''}">
+        <div class="logs-normal-grid" id="logsGrid">
+          ${errores.map((e, idx) => `
+            <div class="log-item-clickable" data-idx="${idx}" title="Click para ver detalles y gestionar">
+              <strong style="color:#f58a07">${escapeHtml(e.maquina.Descripcion)}:</strong> 
+              ${escapeHtml(e.log.Mensaje)}
+            </div>
+          `).join("")}
+        </div>
       </div>
     `;
 
@@ -382,6 +404,15 @@ export function renderLogsNormal(data) {
     morphdom(dom.logsNormalSection, tempDiv, { childrenOnly: true });
 
     dom.logsNormalSection.hidden = false;
+
+    // Listener para minimizar/extender la sección
+    const toggleHeader = dom.logsNormalSection.querySelector("#toggleErroresHeader");
+    if (toggleHeader) {
+      toggleHeader.onclick = () => {
+        appState.erroresMinimizados = !appState.erroresMinimizados;
+        renderLogsNormal(data);
+      };
+    }
 
     dom.logsNormalSection.querySelectorAll(".log-item-clickable").forEach(item => {
       item.addEventListener("click", () => {
@@ -430,20 +461,74 @@ export function detenerProgressBar() {
   dom.cancelarEdicionBtn.addEventListener("click", () => { cerrarModal(); });
   window.addEventListener("click", e => { if (e.target === dom.modalLog) cerrarModal(); });
 
+  /**
+   * Actualiza el estado del botón Enviar según la validez del formulario de logs.
+   */
+  function updateErrorSubmitBtnState() {
+    const submitBtn = dom.formEdicionLog.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+
+    const isInvalid = !dom.formEdicionLog.checkValidity();
+    submitBtn.disabled = isInvalid;
+
+    if (isInvalid) {
+        const missing = [];
+        dom.formEdicionLog.querySelectorAll('[required]').forEach(el => {
+            if (!el.checkValidity()) {
+                const labelText = el.closest('.form-control')?.querySelector('label')?.innerText.replace('*', '').trim();
+                if (labelText) missing.push(labelText);
+            }
+        });
+        submitBtn.title = "Faltan campos obligatorios: " + missing.join(", ");
+    } else {
+        submitBtn.title = "Enviar reporte de error";
+    }
+  }
+
+  dom.formEdicionLog.addEventListener("input", (e) => {
+    e.target.classList.add('touched');
+    updateErrorSubmitBtnState();
+  });
+
   
-  // Navegación de errores mediante los botones superiores del modal
-  document.getElementById("prevErrorBtn")?.addEventListener("click", () => {
+  // Navegación de errores unificada (estilo Maestro)
+  document.getElementById("modalLogBtnFirst")?.addEventListener("click", () => {
+    appState.currentModalLogIndex = 0;
+    appState.currentModalData.logId = appState.currentModalLogs[0].ID;
+    renderContenidoModal();
+  });
+  document.getElementById("modalLogBtnPrev")?.addEventListener("click", () => {
     if (appState.currentModalLogIndex > 0) {
         appState.currentModalLogIndex--;
         appState.currentModalData.logId = appState.currentModalLogs[appState.currentModalLogIndex].ID;
         renderContenidoModal();
     }
   });
-  document.getElementById("nextErrorBtn")?.addEventListener("click", () => {
+  document.getElementById("modalLogBtnNext")?.addEventListener("click", () => {
     if (appState.currentModalLogIndex < appState.currentModalLogs.length - 1) {
         appState.currentModalLogIndex++;
         appState.currentModalData.logId = appState.currentModalLogs[appState.currentModalLogIndex].ID;
         renderContenidoModal();
+    }
+  });
+  document.getElementById("modalLogBtnLast")?.addEventListener("click", () => {
+    appState.currentModalLogIndex = appState.currentModalLogs.length - 1;
+    appState.currentModalData.logId = appState.currentModalLogs[appState.currentModalLogIndex].ID;
+    renderContenidoModal();
+  });
+
+  // Atajos de teclado para navegación en el modal de logs
+  document.addEventListener("keydown", (e) => {
+    if (dom.modalLog.style.display === "flex") {
+        if (e.key === "ArrowLeft" || e.key === "PageUp") {
+            document.getElementById("modalLogBtnPrev")?.click();
+        } else if (e.key === "ArrowRight" || e.key === "PageDown") {
+            document.getElementById("modalLogBtnNext")?.click();
+        } else if (e.key === "ArrowUp" || e.key === "Home") {
+            document.getElementById("modalLogBtnFirst")?.click();
+        } else if (e.key === "ArrowDown" || e.key === "End") {
+            document.getElementById("modalLogBtnLast")?.click();
+        }
     }
   });
 
@@ -471,6 +556,13 @@ export function detenerProgressBar() {
 
   dom.formEdicionLog.addEventListener("submit", async (e) => {
     e.preventDefault();
+
+    dom.formEdicionLog.classList.add('form-invalid');
+    if (!dom.formEdicionLog.checkValidity()) {
+        Swal.fire("Atención", "Por favor, rellene todos los campos obligatorios marcados con *", "warning");
+        return;
+    }
+
     const formData = new FormData(dom.formEdicionLog);
     const idLog = formData.get("id_log");
     const modo = idLog ? "actualizar_log" : "crear_log";
@@ -486,7 +578,34 @@ export function detenerProgressBar() {
 
     formData.set("fecha", fechaRaw.replace(/-/g, ""));
     formData.set("hora", horaRaw);
-    formData.set("mensaje", document.getElementById("modalMensajeInput").value);
+
+    const isActivo = document.getElementById("modalEstadoError").checked;
+    formData.set("resultado", isActivo ? "0" : "1");
+
+    // Procesamiento automático de observaciones con timestamp [DD/MM/YYYY, HH:MM]
+    const log = appState.currentModalLogs[appState.currentModalLogIndex];
+    const originalObs = (log.Observaciones || "").trim();
+    let finalObs = document.getElementById("modalObservaciones").value.trim();
+
+    if (finalObs !== originalObs && finalObs !== "") {
+        const now = new Date();
+        const d = String(now.getDate()).padStart(2, '0');
+        const mo = String(now.getMonth() + 1).padStart(2, '0');
+        const y = now.getFullYear();
+        const h = String(now.getHours()).padStart(2, '0');
+        const mi = String(now.getMinutes()).padStart(2, '0');
+        const prefix = `[${d}/${mo}/${y}, ${h}:${mi}] `;
+
+        if (originalObs === "") {
+            finalObs = prefix + finalObs;
+        } else if (finalObs.startsWith(originalObs)) {
+            const newPart = finalObs.substring(originalObs.length).trim();
+            if (newPart) finalObs = originalObs + "\n" + prefix + newPart;
+        } else {
+            finalObs = prefix + finalObs;
+        }
+        formData.set("observaciones", finalObs);
+    }
 
     const btnSubmit = dom.formEdicionLog.querySelector('button[type="submit"]');
     

@@ -1,0 +1,32 @@
+/* ==========================================================================
+   main.css
+   Punto de entrada principal — importa todos los módulos CSS en orden.
+   Sustituye el style.css original.
+
+   Orden de carga:
+   01 → Variables y temas (tokens de diseño)
+   02 → Animaciones (keyframes)
+   03 → Estilos base y reset
+   04 → Formularios
+   05 → SweetAlert2 overrides
+   06 → Botones
+   07 → KPIs y Logs
+   08 → Modal
+   09 → Tabla y resultados
+   10 → Modo Presentación / Fullscreen
+   11 → Diseño responsivo
+   12 → Utilidades
+   ========================================================================== */
+
+@import url('./variables.css');
+@import url('./animations.css');
+@import url('./base.css');
+@import url('./forms.css');
+@import url('./sweetalert.css');
+@import url('./buttons.css');
+@import url('./kpi-logs.css');
+@import url('./modal.css');
+@import url('./table.css');
+@import url('./presentation.css');
+@import url('./responsive.css');
+@import url('./utilities.css');

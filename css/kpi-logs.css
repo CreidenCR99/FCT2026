@@ -1,0 +1,147 @@
+/* ========================================================================
+   kpi-logs.css
+   Módulos de Datos (KPIs y Logs) — Cards de KPI, sección de errores activos y items de log.
+   ======================================================================== */
+
+/* ---- KPI Cards ---- */
+/* En modo normal se ven dentro de tabla-section, antes del header */
+.kpi-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5vw;
+  padding: 0 2vw;
+}
+
+.kpi-card {
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.06);
+  padding: 2vh 1.5vw;
+  border: 0.2vh solid var(--border-soft);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+
+.kpi-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.8vh;
+}
+
+.kpi-value {
+  font-size: clamp(3.5vh, 3vw, 5vh); font-weight: 800;
+  line-height: 1; margin-bottom: 0;
+  color: var(--kpi-total-color);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-label {
+  font-size: clamp(1.4vh, 0.3vw + 0.7vh, 1.6vh);
+  font-weight: 600; color: var(--text-muted);
+}
+
+.kpi-ok { background-color: rgba(40, 167, 69, 0.10); }
+.kpi-alerta { background-color: rgba(161, 7, 2, 0.10); }
+.kpi-log { background-color: rgba(224, 120, 0, 0.10); }
+
+.kpi-ok    .kpi-value { color: var(--kpi-ok-color); }
+.kpi-alerta .kpi-value { color: var(--kpi-alerta-color); }
+.kpi-log   .kpi-value { color: var(--kpi-log-color); }
+
+.kpi-trend {
+  display: inline-block;
+  font-size: 1vw; font-weight: 800;
+  line-height: 1; margin-left: 0.3vw;
+  /* Aparece con trendEntrance y luego se queda balanceándose con trendFloat */
+  animation: trendEntrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             trendFloat 0.7s ease-in-out infinite 0.4s;
+}
+
+.kpi-pulse {
+  display: inline-block;
+  animation: kpiPulse 0.5s ease-out;
+}
+
+.kpi-animate-up {
+  animation: kpiFlashUp 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+.kpi-animate-down {
+  animation: kpiFlashDown 7.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* ---- Sección de Errores Activos (Normal) ---- */
+.logs-normal-section {
+  margin: 2vh 2vw 0;
+  padding: 2vh 1.5vw;
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  border: 0.15vh solid var(--border-soft);
+  border-left: 0.4vw solid #e07800;
+  animation: entradaSuave 0.5s ease-out forwards;
+}
+
+.logs-normal-titulo {
+  font-weight: 700;
+  margin-bottom: 1.5vh;
+  color: var(--text);
+  font-size: 2vh;
+}
+
+/* Icono de flecha con rotación animada */
+.toggle-arrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.85em;
+  opacity: 0.8;
+  font-weight: bold;
+}
+
+.toggle-arrow.is-collapsed {
+  transform: rotate(-180deg);
+}
+
+/* Contenedor para animar la expansión/contracción con efecto slide */
+.logs-expand-wrapper {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 1;
+}
+
+.logs-expand-wrapper.is-minimized {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.logs-expand-wrapper > div {
+  overflow: hidden;
+}
+
+.logs-normal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20vw, 1fr));
+  gap: 0.4vw;
+}
+
+.log-item-clickable {
+  cursor: pointer;
+  padding: 1vh 1vw;
+  background: var(--surface);
+  border: 0.15vh solid var(--border-soft);
+  border-radius: var(--radius-sm);
+  font-size: 1.5vh;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clickable-error {
+  cursor: pointer;
+}
+
+.log-item-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--primary);
+}

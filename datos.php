@@ -122,6 +122,125 @@ if ($modo === 'organismos') {
 }
 
 /**
+ * MODO: maquinas_navegacion
+ * Obtiene la lista completa de máquinas para la navegación del maestro.
+ */
+if ($modo === 'maquinas_navegacion') {
+    $sql = "SELECT NumeroSerie, Descripcion, TipoMaquina, Notas, Organismo, Cliente, Provincia, 
+                   MonitorizarEstado, MonitorizarAlertas, Actualizar 
+            FROM Maquinas ORDER BY NumeroSerie";
+    $stmt = sqlsrv_query($conn, $sql);
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+    $data = [];
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $data[] = $row;
+    }
+    sqlsrv_free_stmt($stmt);
+    echo json_encode($data);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
+ * MODO: get_nombre
+ * Recupera el nombre de un organismo, provincia o cliente por su código.
+ */
+if ($modo === 'get_nombre') {
+    $tipo = $_GET['tipo'] ?? '';
+    $codigo = $_GET['codigo'] ?? '';
+    $tabla = '';
+    if ($tipo === 'organismos') $tabla = 'Organismos';
+    else if ($tipo === 'provincias') $tabla = 'Provincias';
+    else if ($tipo === 'clientes') $tabla = 'Clientes';
+
+    if ($tabla && $codigo) {
+        $sql = "SELECT Nombre FROM $tabla WHERE codigo = ?";
+        $stmt = sqlsrv_query($conn, $sql, array($codigo));
+        $res = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+        echo json_encode(["nombre" => $res ? $res['Nombre'] : ""]);
+        sqlsrv_free_stmt($stmt);
+    } else {
+        echo json_encode(["nombre" => ""]);
+    }
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
+ * MODO: verificar_ns
+ * Comprueba si un número de serie ya existe en la tabla Maquinas.
+ */
+if ($modo === 'verificar_ns') {
+    $ns = $_GET['ns'] ?? '';
+    $sql = "SELECT COUNT(*) as cuenta FROM Maquinas WHERE NumeroSerie = ?";
+    $stmt = sqlsrv_query($conn, $sql, array($ns));
+    $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+    echo json_encode(["exists" => $row['cuenta'] > 0]);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
+ * MODO: maestro
+ * Obtiene el catálogo completo de una entidad (organismos, provincias o clientes)
+ * devolviendo tanto el código como el nombre.
+ */
+if ($modo === 'maestro') {
+    $tipo = $_GET['tipo'] ?? '';
+    $tabla = '';
+    if ($tipo === 'organismos') $tabla = 'Organismos';
+    else if ($tipo === 'provincias') $tabla = 'Provincias';
+    else if ($tipo === 'clientes') $tabla = 'Clientes';
+    else if ($tipo === 'maquinas') { $sql = "SELECT NumeroSerie AS Codigo, Descripcion AS Nombre FROM Maquinas ORDER BY NumeroSerie"; }
+    else { echo json_encode([]); exit; }
+
+    if (!isset($sql)) { $sql = "SELECT codigo AS Codigo, Nombre FROM $tabla ORDER BY Nombre"; }
+    $stmt = sqlsrv_query($conn, $sql);
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+    $data = [];
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $data[] = $row;
+    }
+    sqlsrv_free_stmt($stmt);
+    echo json_encode($data);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
+ * MODO: errores
+ * Obtiene el catálogo completo de errores configurados en el sistema.
+ */
+if ($modo === 'errores') {
+    $sql = "SELECT Codigo, Descripcion FROM Errores ORDER BY Codigo";
+    $stmt = sqlsrv_query($conn, $sql);
+
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+
+    $data = [];
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $data[] = $row;
+    }
+
+    sqlsrv_free_stmt($stmt);
+    echo json_encode($data);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
  * MODO: provincias
  * Recupera las provincias asociadas a un organismo opcional. Utiliza parámetros
  * de consulta (?) para neutralizar intentos de inyección SQL en la entrada del usuario.
@@ -172,7 +291,8 @@ if ($modo === 'maquinas') {
                 m.UltimoControl,
                 m.MonitorizarEstado,
                 m.MonitorizarAlertas,
-                m.NumeroSerie
+                m.NumeroSerie,
+                m.TipoMaquina
             FROM Maquinas m
             LEFT JOIN Organismos o ON o.codigo = m.organismo
             LEFT JOIN Provincias p ON p.codigo = m.provincia
@@ -198,53 +318,51 @@ if ($modo === 'maquinas') {
     }
     sqlsrv_free_stmt($stmtMachines);
 
-    // Si no hay maquinas, se devuelve antes
-    if (empty($machines)) {
-        echo json_encode([]);
-        sqlsrv_close($conn);
-        exit;
-    }
-
-    /**
-     * Obtención de Logs mediante el operador IN.
-     * Se construye dinámicamente una cadena de marcadores de posición (?) igual 
-     * a la cantidad de máquinas encontradas para realizar una búsqueda eficiente.
-     */
-    $placeholders = implode(',', array_fill(0, count($numeroSeries), '?'));
-    $sqlLogs = "SELECT
-                    le.Id as ID,
-                    le.NumeroSerie as Numero_Serie,
-                    le.TipoMaquina,
-                    le.TimeStamp,
-                    le.CodigoError,
-                    le.Activo,
-                    le.Observaciones,
-                    e.Descripcion as Mensaje
-                FROM Log_Errores le
-                LEFT JOIN Errores e ON le.CodigoError = e.Codigo
-                WHERE le.NumeroSerie IN ($placeholders) 
-                  AND le.Activo = 1
-                ORDER BY le.NumeroSerie, le.Id DESC";
-
-    $stmtLogs = sqlsrv_query($conn, $sqlLogs, $numeroSeries);
-
-    if ($stmtLogs === false) {
-        http_response_code(500);
-        echo json_encode(["error" => sqlsrv_errors()]);
-        exit;
-    }
-
     $logsByNumeroSerie = [];
-    while ($logRow = sqlsrv_fetch_array($stmtLogs, SQLSRV_FETCH_ASSOC)) {
-        $ns = $logRow['Numero_Serie'];
-        // Eliminamos el NumeroSerie del log individual para no repetir datos
-        unset($logRow['Numero_Serie']);
-        if (!isset($logsByNumeroSerie[$ns])) {
-            $logsByNumeroSerie[$ns] = [];
+
+    if (!empty($numeroSeries)) {
+        /**
+         * Obtención de Logs optimizada.
+         * En lugar de usar un IN clause con miles de parámetros (que fallaría por el límite de 2100 de sqlsrv),
+         * aplicamos los mismos filtros de Organismo/Provincia que en la consulta de máquinas.
+         */
+        $sqlLogs = "SELECT
+                        le.Id as ID,
+                        le.NumeroSerie as Numero_Serie,
+                        le.TipoMaquina,
+                        le.TimeStamp,
+                        le.CodigoError,
+                        le.Activo,
+                        le.Observaciones,
+                        e.Descripcion as Mensaje
+                    FROM Log_Errores le
+                    INNER JOIN Maquinas m ON m.NumeroSerie = le.NumeroSerie
+                    LEFT JOIN Organismos o ON o.codigo = m.organismo
+                    LEFT JOIN Provincias p ON p.codigo = m.provincia
+                    LEFT JOIN Errores e ON le.CodigoError = e.Codigo
+                    WHERE le.Activo = 1
+                      AND (? = '' OR o.Nombre = ?)
+                      AND (? = '' OR p.Nombre = ?)
+                    ORDER BY le.NumeroSerie, le.Id DESC";
+
+        $stmtLogs = sqlsrv_query($conn, $sqlLogs, $paramsMachines);
+
+        if ($stmtLogs === false) {
+            http_response_code(500);
+            echo json_encode(["error" => sqlsrv_errors()]);
+            exit;
         }
-        $logsByNumeroSerie[$ns][] = $logRow;
+
+        while ($logRow = sqlsrv_fetch_array($stmtLogs, SQLSRV_FETCH_ASSOC)) {
+            $ns = $logRow['Numero_Serie'];
+            unset($logRow['Numero_Serie']);
+            if (!isset($logsByNumeroSerie[$ns])) {
+                $logsByNumeroSerie[$ns] = [];
+            }
+            $logsByNumeroSerie[$ns][] = $logRow;
+        }
+        sqlsrv_free_stmt($stmtLogs);
     }
-    sqlsrv_free_stmt($stmtLogs);
 
     // Agrupación manual de logs dentro de sus respectivas máquinas (Estructura jerárquica)
     foreach ($machines as &$machine) {
@@ -253,7 +371,7 @@ if ($modo === 'maquinas') {
     unset($machine); 
 
     // Enviamos las columnas una vez y los datos como arrays simples
-    $cols = ["Organismo", "Provincia", "Cliente", "Descripcion", "UltimoControl", "MonitorizarEstado", "MonitorizarAlertas", "NumeroSerie", "Logs"];
+    $cols = ["Organismo", "Provincia", "Cliente", "Descripcion", "UltimoControl", "MonitorizarEstado", "MonitorizarAlertas", "NumeroSerie", "TipoMaquina", "Logs"];
     $rows = [];
     foreach ($machines as $m) {
         $row = [];
@@ -272,21 +390,117 @@ if ($modo === 'maquinas') {
 }
 
 /**
+ * MODO: crear_maquina
+ * Inserta o actualiza una máquina en la tabla Maquinas.
+ */
+if ($modo === 'crear_maquina') {
+    $ns = $_POST['ns'] ?? '';
+    $desc = $_POST['descripcion'] ?? '';
+    $tipo = $_POST['tipo'] ?? '';
+    $notas = $_POST['notas'] ?? '';
+    $org = $_POST['organismo'] ?? '';
+    $cli = $_POST['cliente'] ?? '';
+    $prov = $_POST['provincia'] ?? '';
+
+    if (empty($ns)) {
+        http_response_code(400);
+        echo json_encode(["error" => "El número de serie es obligatorio"]);
+        exit;
+    }
+
+    // Validación de existencia de códigos maestros
+    $tablas_maestras = [
+        ['tabla' => 'Organismos', 'codigo' => $org, 'label' => 'Organismo'],
+        ['tabla' => 'Clientes', 'codigo' => $cli, 'label' => 'Cliente'],
+        ['tabla' => 'Provincias', 'codigo' => $prov, 'label' => 'Provincia']
+    ];
+
+    foreach ($tablas_maestras as $maestra) {
+        $sqlCheck = "SELECT COUNT(*) as cuenta FROM " . $maestra['tabla'] . " WHERE codigo = ?";
+        $stmtCheck = sqlsrv_query($conn, $sqlCheck, array($maestra['codigo']));
+        if ($stmtCheck === false) {
+            http_response_code(500);
+            echo json_encode(["error" => sqlsrv_errors()]);
+            exit;
+        }
+        $rowCheck = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC);
+        if ($rowCheck['cuenta'] == 0) {
+            http_response_code(400);
+            echo json_encode(["error" => "El código de " . $maestra['label'] . " (" . $maestra['codigo'] . ") no existe en la base de datos."]);
+            exit;
+        }
+    }
+
+    // Valores de bits (1 si el checkbox está marcado, 0 si no)
+    $actualizar = isset($_POST['actualizar']) ? 1 : 0;
+    $ultimoControl = null;
+    $monEstado = isset($_POST['mon_estado']) ? 1 : 0;
+    $monAlerta = isset($_POST['mon_alertas']) ? 1 : 0;
+
+    $sql = "IF EXISTS (SELECT 1 FROM Maquinas WHERE NumeroSerie = ?)
+                UPDATE Maquinas SET Descripcion=?, TipoMaquina=?, Notas=?, Organismo=?, Cliente=?, Provincia=?, Actualizar=?, MonitorizarEstado=?, MonitorizarAlertas=? WHERE NumeroSerie=?
+            ELSE
+                INSERT INTO Maquinas (NumeroSerie, Descripcion, TipoMaquina, Notas, Organismo, Cliente, Provincia, Actualizar, UltimoControl, MonitorizarEstado, MonitorizarAlertas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+    $params = array(
+        $ns, $desc, $tipo, $notas, $org, $cli, $prov, $actualizar, $monEstado, $monAlerta, $ns,
+        $ns, $desc, $tipo, $notas, $org, $cli, $prov, $actualizar, $ultimoControl, $monEstado, $monAlerta
+    );
+
+    $stmt = sqlsrv_query($conn, $sql, $params);
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+    echo json_encode(["success" => true]);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
+ * MODO: eliminar_maquina
+ * Elimina una máquina de la base de datos.
+ */
+if ($modo === 'eliminar_maquina') {
+    $ns = $_POST['ns'] ?? '';
+
+    if (empty($ns)) {
+        http_response_code(400);
+        echo json_encode(["error" => "No se ha proporcionado el número de serie"]);
+        exit;
+    }
+
+    $sql = "DELETE FROM Maquinas WHERE NumeroSerie = ?";
+    $stmt = sqlsrv_query($conn, $sql, array($ns));
+    if ($stmt === false) {
+        http_response_code(500);
+        echo json_encode(["error" => sqlsrv_errors()]);
+        exit;
+    }
+    echo json_encode(["success" => true]);
+    sqlsrv_close($conn);
+    exit;
+}
+
+/**
  * MODO: crear_log
  * Inserta un nuevo registro de incidencia técnica. Valida que los campos obligatorios
  * (Número de Serie, Mensaje, Fecha y Hora) no estén vacíos antes de procesar el INSERT.
  */
 if ($modo === 'crear_log') {
     $ns = $_POST['numero_serie'] ?? '';
-    $mensaje = $_POST['mensaje'] ?? '';
+    $codigo_error = $_POST['codigo_error'] ?? '';
+    $tipo = $_POST['tipo_maquina'] ?? '';
     $resultado = $_POST['resultado'] ?? '';
     $observaciones = $_POST['observaciones'] ?? '';
     $fecha = $_POST['fecha'] ?? '';
     $hora = $_POST['hora'] ?? '';
 
-    if (empty($ns) || empty($mensaje) || empty($fecha) || empty($hora)) {
+    if (empty($ns) || empty($codigo_error) || empty($fecha) || empty($hora)) {
         http_response_code(400);
-        echo json_encode(["error" => "Faltan campos obligatorios (Numero Serie, Mensaje, Fecha, Hora)"]);
+        echo json_encode(["error" => "Faltan campos obligatorios (Numero Serie, Codigo Error, Fecha, Hora)"]);
         exit;
     }
 
@@ -299,8 +513,7 @@ if ($modo === 'crear_log') {
             (NumeroSerie, TipoMaquina, TimeStamp, CodigoError, Activo, Observaciones) 
             VALUES (?, ?, ?, ?, ?, ?)";
     
-    // Nota: TipoMaquina se deja vacío o se podría recuperar de la tabla Maquinas si fuera necesario
-    $params = array($ns, '', $timestamp, $mensaje, $activo, $observaciones);
+    $params = array($ns, $tipo, $timestamp, $codigo_error, $activo, $observaciones);
     $stmt = sqlsrv_query($conn, $sql, $params);
 
     if ($stmt === false) {

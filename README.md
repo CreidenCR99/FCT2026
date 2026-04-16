@@ -8,7 +8,7 @@ Sistema de monitorización y gestión de estados de máquinas distribuido por or
 - **Búsqueda Dinámica:** Filtrado de máquinas por Organismo y Provincia.
 - **KPIs de Estado:** Resumen visual rápido que incluye:
   - Total de máquinas listadas.
-  - Máquinas con estado **Activo** (Conectadas recientemente).
+  - Máquinas con estado **Activo** (Conectadas en los ultimos 10m).
   - Máquinas **Sin respuesta** (Alerta de conexión).
   - **Errores activos** detectados en el log de errores (filtrado por monitorización).
 
@@ -36,9 +36,14 @@ Sistema de monitorización y gestión de estados de máquinas distribuido por or
 ### 1.5. Interfaz y Experiencia de Usuario
 - **Modo Oscuro/Claro:** Soporte nativo para temas visuales que se adaptan a la preferencia del usuario o del entorno.
 - **Refresco Automático:** Sincronización constante con el servidor cada 7.5 segundos con una barra de progreso visual.
-- **Indicadores de Tendencia y brillo:** Flechas animadas (`▲`, `▼`) y brillo en los KPIs que indican si los valores han subido o bajado respecto al ciclo anterior, desapareciendo tras unos segundos si el dato se estabiliza.
+- **Diseño Responsivo:** Interfaz adaptada mediante unidades relativas (`vh`/`vw`) para una escala perfecta en pantallas horizontales de distinta resolución.
 - **Exportación:** Permite descargar los resultados actuales en formato CSV para reportes externos (incluye estado de conexión).
-- **Diseño Fluido:** Interfaz adaptada mediante unidades relativas (`vh`/`vw`) para una escala perfecta en pantallas horizontales de alta resolución.
+- **Animaciones y Fluidez Visual:** Implementación de microinteracciones para mejorar la respuesta visual:
+  - **Entrada en Cascada:** Las filas de la tabla aparecen secuencialmente con un desplazamiento vertical suave (limitado a las primeras 50 filas para garantizar un alto rendimiento).
+  - **Efecto Slide en Errores:** La sección de errores activos utiliza transiciones de `grid-template-rows` para expandirse y contraerse de forma fluida.
+  - **Indicadores de Tendencia y brillo:** Flechas animadas (`▲`, `▼`) y brillo en los KPIs que indican si los valores han subido o bajado respecto al ciclo anterior, desapareciendo tras unos segundos si el dato se estabiliza.
+  - **Movimientos Naturales:** Uso de curvas de interpolación `cubic-bezier` para que las transiciones se sientan orgánicas.
+
 
 ---
 
@@ -53,7 +58,7 @@ Sistema de monitorización y gestión de estados de máquinas distribuido por or
 ## 3. Guía de Uso Rápido
 
 1. **Consulta:** Seleccione un organismo o provincia en el formulario superior y pulse "Buscar".
-2. **Monitorización:** Observe los KPIs para entender el estado general del parque. La tabla se actualizará sola periódicamente.
+2. **Monitorización:** Observe los KPIs para entender el estado general. La tabla se actualizará sola periódicamente.
 3. **Gestión:** Si aparece un error en la sección naranja de "Errores Activos", haga clic sobre él para abrir el panel de gestión.
 4. **Resolución:** Cambie el estado a "Solucionado" y añada notas sobre la intervención realizada.
 5. **Exhibición:** Pulse el botón "Pantalla Completa" para activar el modo de monitorización continua.
@@ -107,6 +112,7 @@ Es la entidad central del sistema.
 | Campo | Tipo | Descripción |
 |-------|--------|--------|
 | `NumeroSerie` | PK | Identificador único físico de la máquina. |
+| `TipoMaquina` | String | Categoría o modelo de la máquina. |
 | `Descripcion` | String | Nombre descriptivo. |
 | `organismo` | FK | Código que enlaza con la tabla `Organismos`. |
 | `provincia` | FK | Código que enlaza con la tabla `Provincias`. |

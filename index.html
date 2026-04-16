@@ -27,14 +27,7 @@
       <form id="form" novalidate>
         <div class="form-header">
           <h1>
-            <!--<svg class="logo-icon" width="30" height="30" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-              <rect width="32" height="32" rx="6" fill="var(--primary)"/>
-              <rect x="6" y="8" width="20" height="13" rx="2" stroke="white" stroke-width="2"/>
-              <rect x="14" y="21" width="4" height="3" fill="white"/>
-              <rect x="11" y="24" width="10" height="2" rx="1" fill="white"/>
-              <circle cx="24" cy="10" r="5" fill="#ff3b30"/>
-            </svg>-->
-              <img src="logo.jpg" alt="Logo SicoLares">
+          <img class="page-logo" src="logo.jpg" alt="Logo SicoLares">
             - Control de máquinas
           </h1>
           <button type="button" id="themeToggle" class="btn-icon" aria-label="Cambiar a modo oscuro"></button>
@@ -56,16 +49,22 @@
         </div>
 
         <div class="botones">
+          <button type="button" id="mmOpenBtn" class="btn-secondary btn-sep-left" style="border-color: var(--primary); color: var(--primary);">
+            <svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Registro de máquinas
+          </button>
           <button type="button" id="limpiarFiltrosBtn" class="btn-secondary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" aria-hidden="true">
+            <svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="3" aria-hidden="true">
               <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
             </svg>
             Limpiar filtros
           </button>
           <button type="submit" class="btn-primary">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" aria-hidden="true">
+            <svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="3" aria-hidden="true">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             Buscar
@@ -96,15 +95,15 @@
             />
             <button type="button" id="exportCsvBtn" class="btn-secondary btn-small"
                     aria-label="Exportar resultados como CSV">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" aria-hidden="true">
+              <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="3" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
               </svg>
               CSV
             </button>
             <span id="paginacionInfo" aria-live="polite"></span>
             <button type="button" id="modoPresentacionBtn" class="btn-primary">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+              <svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
               </svg>
               Pantalla completa
@@ -112,7 +111,7 @@
             <button type="button" id="salirPresentacionBtn" class="btn-secondary"
                     style="display:none" aria-label="Salir del modo presentación">
               <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                   stroke-width="2" aria-hidden="true">
+                   stroke-width="3" aria-hidden="true">
                 <path d="M8 3H5a2 2 0 00-2 2v14a2 2 0 002 2h3M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M12 8l-4 4 4 4M8 12h13"/>
               </svg>
               Salir
@@ -139,66 +138,288 @@
         <div id="presentacionLista" class="presentacion-lista" hidden aria-live="polite"></div>
 
         <!-- Modal de edición de Log en fullscreen -->
-        <div id="modalLog" class="modal" style="display: none;">
+
+      </section>
+      <!-- Modal Alta de Máquina -->
+        <div id="modalMaquinas" class="modal" style="display: none;">
+          <div class="modal-content" style="width: 50vw;">
+            <div class="modal-header">
+              <h2 id="mmTitle">Alta / Mantenimiento de Máquina</h2>
+              <button type="button" id="cerrarMMBtn" class="btn-icon">
+                <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <form id="formMaquinasMaster">
+              <div class="form-grid">
+                <div class="form-control">
+                  <label>Número de Serie <label style="color: red; display: inline;">*</label></label>
+                  <div class="form-row-inline">
+                    <input type="text" name="ns" id="mmNS" maxlength="50" required>
+                    <button type="button" id="mmSearchTrigger" class="btn-icon" title="Buscar máquina (F2)">
+                      <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-control">
+                  <label>Descripción <label style="color: red; display: inline;">*</label></label>
+                  <input type="text" name="descripcion" id="mmDesc" maxlength="50" required>
+                </div>
+                <div class="form-control">
+                  <label>Tipo de Máquina <label style="color: red; display: inline;">*</label></label>
+                  <select name="tipo" id="mmTipo" required>
+                    <option value="TC">TC - Tunel cliente</option>
+                    <option value="TP">TP - Tunel Planta</option>
+                    <option value="M">M - ALM</option>
+                    <option value="O">O - Tolva</option>
+                    <option value="D">D - Dispensacion/Peticion</option>
+                    <option value="S">S - Seleccion</option>
+                    <option value="AM">AM - Altas Manuales</option>
+                    <option value="S">S - Control de Salidas</option>
+                    <option value="TABS">TABS - Tunel ABS</option>
+                  </select>
+                </div>
+                <div class="form-control">
+                  <label>Notas</label>
+                  <input type="text" name="notas" id="mmNotas" maxlength="50">
+                </div>
+              </div>
+
+              <div class="form-grid" style="margin-top: 2vh;">
+                <div class="form-control">
+                  <label>Organismo (4) <label style="color: red; display: inline;">*</label></label>
+                  <div class="form-row-inline">
+                    <input type="number" name="organismo" id="mmOrg" maxlength="4" style="width: 6vw;" required>
+                    <button type="button" class="btn-icon sm-trigger" data-type="organismos">
+                      <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </button>
+                    <span id="mmOrgName" class="helper-name"></span>
+                  </div>
+                </div>
+                <div class="form-control">
+                  <label>Cliente (5) <label style="color: red; display: inline;">*</label></label>
+                  <div class="form-row-inline">
+                    <input type="number" name="cliente" id="mmCli" maxlength="5" style="width: 6vw;" required>
+                    <button type="button" class="btn-icon sm-trigger" data-type="clientes">
+                      <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </button>
+                    <span id="mmCliName" class="helper-name"></span>
+                  </div>
+                </div>
+                <div class="form-control">
+                  <label>Provincia (2) <label style="color: red; display: inline;">*</label></label>
+                  <div class="form-row-inline">
+                    <input type="number" name="provincia" id="mmProv" maxlength="2" style="width: 6vw;" required>
+                    <button type="button" class="btn-icon sm-trigger" data-type="provincias">
+                      <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </button>
+                    <span id="mmProvName" class="helper-name"></span>
+                  </div>
+                </div>
+              </div>
+
+                <div class="form-control">
+                  <label class="form-control-check" style="margin-top: 2.5vh;">
+                    Actualizar datos
+                    <input type="checkbox" name="actualizar" id="mmActualizar">
+                  </label>
+                </div>
+              <div class="form-grid" style="margin-top: 2vh;">
+                <div class="form-control">
+                  <label class="form-control-check">
+                    Monitorizar Estado
+                    <input type="checkbox" name="mon_estado" id="mmMonEstado">
+                  </label>
+                </div>
+                <div class="form-control">
+                  <label class="form-control-check">
+                    Monitorizar Alertas
+                    <input type="checkbox" name="mon_alertas" id="mmMonAlerta">
+                  </label>
+                </div>
+              </div>
+
+              <div class="search-nav-group" style="margin-top: 4vh;">
+                <button type="button" id="mmBtnFirst" class="btn-secondary btn-small">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                </button>
+                <button type="button" id="mmBtnPrev" class="btn-secondary btn-small">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span id="mmCount" style="align-self: center; min-width: 80px; text-align: center; font-size: 0.9em; color: var(--text-muted);">Nuevo</span>
+                <button type="button" id="mmBtnNext" class="btn-secondary btn-small">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <button type="button" id="mmBtnLast" class="btn-secondary btn-small">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+                </button>
+              </div>
+
+              <div class="botones" style="justify-content: center; margin-top: 3vh;">
+                <button type="button" id="mmBtnEliminar" class="btn-secondary" style="border-color: var(--kpi-alerta-color); color: var(--kpi-alerta-color); display:none">
+                    <svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                    </svg>
+                    Eliminar
+                </button>
+                <button type="button" id="mmBtnNuevo" class="btn-secondary">Limpiar / Nuevo</button>
+                <button type="submit" class="btn-primary">Guardar Máquina</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modal Maestro de Búsqueda (F2) -->
+        <div id="modalBusqueda" class="modal" style="display: none;">
+          <div class="modal-content" style="width: 40vw;">
+            <div class="modal-header">
+              <h2>Maestro de Búsquedas</h2>
+              <button type="button" id="cerrarBusquedaBtn" class="btn-icon">
+                <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="search-master-controls">
+                <div class="form-control">
+                  <label>Entidad</label>
+                  <select id="smEntidad">
+                    <option value="organismos">Organismos</option>
+                    <option value="provincias">Provincias</option>
+                    <option value="clientes">Clientes</option>
+                    <option value="maquinas">Máquinas</option>
+                  </select>
+                </div>
+                <div class="form-control">
+                  <label>Buscar por</label>
+                  <select id="smCriterio">
+                    <option value="nombre">Nombre</option>
+                    <option value="codigo">Código</option>
+                  </select>
+                </div>
+                <div class="form-control" id="smMatchContainer">
+                  <label>Coincidencia</label>
+                  <select id="smMatchMode">
+                    <option value="start">Inicia con...</option>
+                    <option value="contains">Contiene...</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-control">
+                <input type="text" id="smInput" placeholder="Escriba para buscar..." autocomplete="off">
+              </div>
+
+              <div class="search-master-results" id="smResultDisplay">
+                <div class="result-code" id="smResCodigo">-</div>
+                <div class="result-name" id="smResNombre">Realice una búsqueda</div>
+              </div>
+
+              <div class="search-nav-group">
+                <button type="button" id="smBtnFirst" class="btn-secondary btn-small" title="Primero (Inicio)">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                </button>
+                <button type="button" id="smBtnPrev" class="btn-secondary btn-small" title="Anterior (←)">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <span id="smCount" style="align-self: center; min-width: 60px; text-align: center; font-size: 0.9em; color: var(--text-muted);">0 / 0</span>
+                <button type="button" id="smBtnNext" class="btn-secondary btn-small" title="Siguiente (→)">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <button type="button" id="smBtnLast" class="btn-secondary btn-small" title="Último (Fin)">
+                  <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+                </button>
+              </div>
+
+              <div class="botones" style="justify-content: center; margin-top: 3vh;">
+                <button type="button" id="smBtnSeleccionar" class="btn-primary">Seleccionar y Filtrar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+    </main>
+
+    <!-- Botón volver arriba -->
+    <button id="backToTop" class="btn-back-to-top" aria-label="Volver arriba">↑</button>
+    <!-- Modal de edición de Log -->
+    <div id="modalLog" class="modal" style="display: none;">
           <div class="modal-content">
             <div class="modal-header">
               <h2 id="modalTitle">Detalles del Error</h2>
-              <div id="modalNavBtns" style="display:none; margin-left: auto; margin-right: 1.5vw; display: flex; gap: 0.5vw;">
-                <button type="button" id="prevErrorBtn" class="btn-primary btn-small" title="Error anterior">◀</button>
-                <button type="button" id="nextErrorBtn" class="btn-primary btn-small" title="Siguiente error">▶</button>
-              </div>
               <button type="button" id="cerrarModalBtn" class="btn-icon" aria-label="Cerrar modal">
-                <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <path d="M18 6L6 18M6 6l12 12"/>
                 </svg>
               </button>
             </div>
             <div class="modal-body">
               <div class="info-maquina">
-                <p><strong>Fecha y hora:</strong> <span id="modalFechaHora"></span></p>
-                <p><strong>Última conexión:</strong> <span id="modalUltimaConexion" style="font-weight: bold; color: var(--primary);"></span></p>
                 <p><strong>Organismo:</strong> <span id="modalOrganismo"></span></p>
                 <p><strong>Provincia:</strong> <span id="modalProvincia"></span></p>
                 <p><strong>Cliente:</strong> <span id="modalCliente"></span></p>
                 <p><strong>Máquina:</strong> <span id="modalMaquinaDesc"></span></p>
                 <p><strong>Tipo de máquina:</strong> <span id="modalTipoMaquina"></span></p>
                 <p><strong>Número de Serie:</strong> <span id="modalMaquinaSN"></span></p>
-                <p><strong>Error Original:</strong> <span id="modalErrorMsg"></span></p>
+                <p><strong>Última conexión:</strong> <span id="modalUltimaConexion"></span></p>
                 <p><strong>Código del error:</strong> <span id="modalCodigoError"></span></p>
+                <p><strong>Error Original:</strong> <span id="modalErrorMsg"></span></p>
+                <p><strong>Fecha y hora:</strong> <span id="modalFechaHora"></span></p>
               </div>
               <form id="formEdicionLog">
                 <input type="hidden" id="modalLogId" name="id_log">
                 <input type="hidden" id="modalMaquinaNS_hidden" name="numero_serie">
+                <input type="hidden" id="modalTipoMaquina_hidden" name="tipo_maquina">
 
                 <div class="form-control" id="containerMensaje" style="display: none; margin-bottom: 2vh;">
-                  <label for="modalMensajeInput">Mensaje de error*</label>
-                  <input type="text" id="modalMensajeInput" name="mensaje" placeholder="Ej: Error de conexión">
+                  <label for="modalCodigoErrorSelect">Código de error <label style="color: red; display: inline;">*</label></label>
+                  <select id="modalCodigoErrorSelect" name="codigo_error">
+                  </select>
                 </div>
 
                 <div class="form-control" id="containerFechaHora" style="display: none; margin-bottom: 2vh;">
                   <div style="display: flex; gap: 1vw;">
                     <div style="flex: 1;">
-                      <label for="modalFecha">Fecha*</label>
+                      <label for="modalFecha">Fecha <label style="color: red; display: inline;">*</label></label>
                       <input type="date" id="modalFecha">
                     </div>
                     <div style="flex: 1;">
-                      <label for="modalHora">Hora*</label>
+                      <label for="modalHora">Hora <label style="color: red; display: inline;">*</label></label>
                       <input type="time" id="modalHora">
                     </div>
                   </div>
                 </div>
 
-                <div class="form-control" style="margin-bottom: 2vh;">
-                  <label for="modalEstadoError">Estado del error</label>
-                  <select id="modalEstadoError" name="resultado">
-                    <option value="1">Solucionado (True)</option>
-                    <option value="0">Sin solucionar (False)</option>
-                  </select>
+                <div class="form-grid">
                 </div>
                 <div class="form-control" style="margin-bottom: 3vh;">
                   <label for="modalObservaciones">Observaciones</label>
                   <textarea id="modalObservaciones" name="observaciones" rows="3" placeholder="Escribe aquí las observaciones..."></textarea>
                 </div>
+                <div class="form-control">
+                    <label class="form-control-check">
+                      Marca la casilla si el error esta activo:
+                      <input type="checkbox" id="modalEstadoError" name="activo_check">
+                    </label>
+                  </div>
+
+                <div class="search-nav-group" id="modalLogNav" style="margin-top: 2vh; margin-bottom: 2vh; display: none;">
+                  <button type="button" id="modalLogBtnFirst" class="btn-secondary btn-small" title="Primero">
+                    <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+                  </button>
+                  <button type="button" id="modalLogBtnPrev" class="btn-secondary btn-small" title="Anterior">
+                    <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span id="modalLogCount" style="align-self: center; min-width: 80px; text-align: center; font-size: 0.9em; color: var(--text-muted);">0 / 0</span>
+                  <button type="button" id="modalLogBtnNext" class="btn-secondary btn-small" title="Siguiente">
+                    <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                  <button type="button" id="modalLogBtnLast" class="btn-secondary btn-small" title="Último">
+                    <svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
+                  </button>
+                </div>
+
                 <div class="botones">
                   <button type="button" id="cancelarEdicionBtn" class="btn-secondary">Cancelar</button>
                   <button type="submit" class="btn-primary">Enviar</button>
@@ -207,13 +428,5 @@
             </div>
           </div>
         </div>
-
-      </section>
-    </main>
-
-    <!-- Botón volver arriba -->
-    <button id="backToTop" class="btn-back-to-top" aria-label="Volver arriba">↑</button>
-    <!-- Modal de edición de Log -->
-    
   </body>
 </html>

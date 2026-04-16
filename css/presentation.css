@@ -1,0 +1,193 @@
+/* ========================================================================
+   presentation.css
+   Modo Presentación — Layout de presentación y modo fullscreen (:fullscreen).
+   ======================================================================== */
+
+
+/* ---- Modo Presentación ---- */
+.presentacion-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: 1fr auto;
+  gap: 0.5vw;
+  height: 100%; min-height: 0;
+  padding-bottom: 0;
+}
+
+.presentacion-errores-footer {
+  grid-column: span 2;
+  border-top: 0.5vh solid #f58a07;
+  margin-top: 1vh; padding: 2.5vh;
+  min-height: 20vh;
+  max-height: 20vh;
+  background: rgba(243, 156, 18, 0.08);
+  border-radius: var(--radius-md);
+  padding-bottom: 0;
+}
+.presentacion-errores-columnas {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5vw;
+}
+.presentacion-columna-errores { display: flex; flex-direction: column; }
+.presentacion-errores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.8vh;
+}
+.presentacion-errores-titulo {
+  color: var(--text); font-weight: bold;
+  font-size: 2.2vh;
+  margin: 0;
+}
+.presentacion-errores-pagination {
+  color: var(--text-muted);
+  font-size: 1.7vh;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;}
+.presentacion-error-item {
+  font-size: 1.8vh; margin-bottom: 0.5vh;
+  color: var(--text);
+  border-bottom: 0.2vh solid var(--border-soft);
+  padding-bottom: 0.1vh;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.indicador-reproduccion {
+  position: fixed; top: 2vh; left: 50%;
+  transform: translateX(-50%);
+  color: #fff; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  padding: 0.8vh 2vw; border-radius: 99vh;
+  font-weight: 700; font-size: 3.5vh;
+  z-index: 99999; display: none; pointer-events: none;
+}
+
+.presentacion-columna {
+  display: flex; flex-direction: column;
+  justify-content: flex-start;
+  height: 100%; width: 100%;
+  min-height: 0; min-width: 0; overflow: hidden;
+}
+
+.linea-organismo, .linea-provincia, .linea-cliente, .linea-maquina {
+  display: flex; align-items: center;
+  padding: 1vh 1.5vw; border-radius: 1.6vh;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border-bottom: 0.5vh solid rgba(0,0,0,0.25);
+}
+.linea-organismo {
+  background: #1c1c1e; color: #fff;
+  font-size: 3.5vh; font-weight: 800; letter-spacing: 0.01em;
+  margin-bottom: 0.4vh;
+}
+.linea-provincia {
+  background: #3a3a3c; color: #fff;
+  font-size: 3vh; font-weight: 800; letter-spacing: 0.01em;
+  margin-top: 0.8vh;
+}
+.linea-cliente {
+  background: #d4d4eb; color: #1c1c1e;
+  font-size: 2.2vh; font-weight: 700; margin-left: 1vh;
+}
+.linea-maquina {
+  color: #fff; font-size: 2vh; font-weight: 700;
+  margin-left: 2vw;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.maquina-badge {
+  display: inline-block; min-width: 3.2vh; text-align: center;
+  margin-right: 1vh; font-size: 1.7vh; font-weight: 900;
+  background: rgba(0,0,0,0.25); border-radius: 0.8vh;
+  padding: 0.2vh 0.6vh;
+}
+
+/**
+ * Pseudo-clase :fullscreen para reconfigurar el layout.
+ * - kpiSection actúa como cabecera visual.
+ * - Se ocultan elementos innecesarios para visualización pasiva.
+ */
+#tablaSection:fullscreen {
+  width: 100%; height: 100%;
+  max-width: none; margin: 0;
+  padding: 0;
+  border-radius: 0; box-shadow: none;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+}
+
+/* Progress bar arriba del todo */
+#tablaSection:fullscreen .progress-bar-container {
+  border-radius: 0; height: 1vh;
+}
+
+/* KPI como header de la presentación */
+#tablaSection:fullscreen .kpi-section {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.2vh;
+  max-height: fit-content !important;
+  padding: 0 2vh 1vh;
+  flex-shrink: 0;
+}
+#tablaSection:fullscreen .kpi-card {
+  padding: 1.4vh 1vw;
+  overflow: hidden;
+}
+#tablaSection:fullscreen .kpi-value {
+  font-size: 3.5vh;
+  margin-bottom: 0.25vw;
+}
+
+#tablaSection:fullscreen .kpi-label {
+  font-size: 1.6vh;
+  white-space: nowrap;
+}
+
+/* Logo SicoLares visible solo en fullscreen */
+#tablaSection:fullscreen .logo-fullscreen {
+  display: flex;
+  font-size: 2.8vh;
+}
+#tablaSection:fullscreen .logo-fullscreen svg {
+  width: 4vh;
+  height: 4vh;
+}
+
+/* Header simplificado en presentación: sin h2, sin search, sin CSV */
+#tablaSection:fullscreen .tabla-header {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vh;
+  padding: 1vh 2vh;
+  flex-shrink: 0;
+}
+#tablaSection:fullscreen .tabla-header h2       { display: none; }
+#tablaSection:fullscreen .search-input          { display: none !important; }
+#tablaSection:fullscreen #exportCsvBtn          { display: none !important; }
+#tablaSection:fullscreen #estadoTabla           { display: none; }
+#tablaSection:fullscreen .progress-bar-container { flex-shrink: 0; }
+
+#tablaSection:fullscreen #paginacionInfo { font-size: 2.4vh; max-width: fit-content; }
+#tablaSection:fullscreen button          { font-size: 2vh; padding: 1vh 2.2vh; max-width: fit-content; gap: 0.2vw; }
+
+/* La lista de presentación ocupa el espacio restante */
+#tablaSection:fullscreen .presentacion-lista {
+  flex: 1; width: 100%;
+  padding: 0 0 1.5vh;
+  min-height: 0;
+}
+
+#tablaSection:fullscreen .presentacion-lista .presentacion-columna {
+  padding: 0 2vh 0 0;
+}
+
+#tablaSection:fullscreen .presentacion-lista .presentacion-columna:nth-child(odd) {
+  padding: 0 0 0 2vh;
+}
+
+#tablaSection:fullscreen .tabla-wrapper { flex: 1; overflow: auto; }
+
+:fullscreen { background: var(--bg); }

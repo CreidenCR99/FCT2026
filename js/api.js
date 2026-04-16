@@ -5,7 +5,7 @@ import { appState } from './state.js';
 import * as dom from './dom.js';
 import { renderKPIs, renderLogsNormal, mostrarSkeleton, actualizarDatosModal, limpiarTrends } from './ui.js';
 import { getEstadoControl, renderTabla, getTooltipEstado } from './table.js';
-import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion } from './presentation.js';
+import { calcularMaxLineas, construirPaginasPresentacion, detenerActualizacionEstado, renderPresentacion } from './presentation.js';
 
 // --- Inicialización ---
   
@@ -61,6 +61,30 @@ export async function cargarProvincias(organismo = "") {
       console.error(e);
     }
   }
+
+/**
+ * Carga el catálogo de errores desde el servidor para poblar el selector del modal.
+ * @async
+ * @returns {Promise<void>}
+ */
+export async function cargarErrores() {
+    try {
+      const res = await fetch("datos.php?modo=errores");
+      const data = await res.json();
+      const select = document.getElementById("modalCodigoErrorSelect");
+      if (!select) return;
+      
+      select.innerHTML = `<option value="">Seleccione un error...</option>`;
+      data.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.Codigo;
+        opt.textContent = `${item.Codigo} - ${item.Descripcion}`;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("Error al cargar catálogo de errores:", e);
+    }
+}
 
   dom.selectOrganismo.addEventListener("change", () => { cargarProvincias(dom.selectOrganismo.value); });
 
@@ -145,7 +169,7 @@ export async function fetchAndRenderData() {
       if (data.length > 0 && appState.columnasTabla.length === 0) {
         appState.columnasTabla = Object.keys(data[0]).filter(col =>
           !col.startsWith('_') && col !== "UltimoControl" && col !== "MonitorizarEstado" &&
-          col !== "NumeroSerie" && col !== "MonitorizarAlertas" && col !== "Logs"
+          col !== "NumeroSerie" && col !== "MonitorizarAlertas" && col !== "Logs" && col !== "TipoMaquina"
         );
       } else if (data.length === 0) {
         appState.columnasTabla = [];
@@ -185,5 +209,6 @@ export async function fetchAndRenderData() {
       if (error.name === "AbortError") return;
       dom.estadoTabla.textContent = "Error al cargar los datos.";
       console.error("Error al actualizar datos:", error);
+      detenerActualizacionEstado();
     }
   }

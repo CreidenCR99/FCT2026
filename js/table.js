@@ -163,7 +163,7 @@ export function renderTabla(maquinasCambiadas = new Set()) {
 
     if (!datosFiltrados.length) {
       dom.thead.innerHTML = "";
-      dom.tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:40px 16px;color:var(--text-muted);font-size:1rem">${
+      dom.tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:4vh 1.6vw;color:var(--text-muted);font-size:1.6vh">${
         appState.filtroTexto ? `Sin resultados para <strong>${appState.filtroTexto}</strong>` : "Sin datos para mostrar"
       }</td></tr>`;
       return;
@@ -189,14 +189,19 @@ export function renderTabla(maquinasCambiadas = new Set()) {
 
     // Usar un string builder y una sola inserción al final
     let htmlBuffer = "";
-    datosFiltrados.forEach(fila => {
+    datosFiltrados.forEach((fila, idx) => {
       const estado = fila._estado;
       const colorSuffix = estado.clase.split('-')[1]; // verde, rojo, naranja, gris
       const esCambio = maquinasCambiadas.has(fila.NumeroSerie) ? " fila-cambiada" : "";
-      const esNaranja = estado.clase === "estado-naranja" ? ' title="Click para gestionar error" style="cursor:pointer" data-clickable="true"' : "";
+      const rowTitle = estado.clase === "estado-naranja" ? 'Click para gestionar error' : 'Click para registrar nuevo error';
+
+      // Limitamos la animación de cascada a las primeras 50 filas para optimizar el rendimiento
+      const isAnimated = idx < 50;
+      const cascadeClass = isAnimated ? " row-cascade" : "";
+      const cascadeStyle = isAnimated ? ` animation-delay: ${(idx * 0.03).toFixed(2)}s;` : "";
       
       htmlBuffer += `
-        <tr class="row-${colorSuffix}${esCambio}"${esNaranja} data-ns="${fila.NumeroSerie}">
+        <tr class="row-${colorSuffix}${esCambio}${cascadeClass}" title="${rowTitle}" style="cursor:pointer;${cascadeStyle}" data-ns="${fila.NumeroSerie}">
           ${appState.columnasTabla.map(col => `<td>${fila[col] ?? ""}</td>`).join("")}
           <td>
             <span class="estado-pill ${estado.clase}" title="${fila._tooltip}" aria-label="Estado: ${estado.texto}">
@@ -212,14 +217,17 @@ export function renderTabla(maquinasCambiadas = new Set()) {
     tempTbody.innerHTML = htmlBuffer;
     morphdom(dom.tbody, tempTbody);
 
-    // Delegación de eventos para las filas naranjas (más eficiente que un listener por fila)
+    // Delegación de eventos para las filas (más eficiente que un listener por fila)
     dom.tbody.onclick = (e) => {
-        const tr = e.target.closest('tr[data-clickable="true"]');
+        const tr = e.target.closest('tr[data-ns]');
         if (tr) {
             const ns = tr.dataset.ns;
             const fila = appState.datosTabla.find(m => m.NumeroSerie === ns);
-            const activeLog = (fila.Logs || []).find(l => !esFalso(l.Activo));
-            if (activeLog) abrirModalError({ maquina: fila, log: activeLog });
+            if (fila) {
+                const activeLog = (fila.Logs || []).find(l => !esFalso(l.Activo));
+                // Si tiene errores activos, abrimos el primero. Si no, abrimos modal para registrar nuevo.
+                abrirModalError({ maquina: fila, log: activeLog || { NumeroSerie: ns } });
+            }
         }
     };
 

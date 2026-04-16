@@ -31,6 +31,7 @@ export const INTERVALO_MS = 7500;
  * @property {Array<Object>} currentModalLogs - Lista de logs de la máquina actual en el modal.
  * @property {number} currentModalLogIndex - Índice del log actual mostrado en el modal.
  * @property {string} lastDataHash - Hash o representación en string de los últimos datos recibidos para evitar re-renders.
+ * @property {boolean} erroresMinimizados - Indica si la sección de errores en la vista normal está contraída.
  */
 export const appState = {
   maxLineasPresentacion: 20,
@@ -52,5 +53,6 @@ export const appState = {
   currentModalData: null,
   currentModalLogs: [],
   currentModalLogIndex: -1,
-  lastDataHash: ""
+  lastDataHash: "",
+  erroresMinimizados: false
 };
