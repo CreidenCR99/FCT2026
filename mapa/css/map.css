@@ -1,0 +1,505 @@
+/* ========================================================================
+   variables.css
+   Variables y Temas — Tokens de diseño para modos claro y oscuro.
+   ======================================================================== */
+
+/**
+ * Tema Claro (Por defecto)
+ */
+:root,
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-soft: #f9f9fb;
+  --surface-offset: #f0f0f5;
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --border: #d2d2d7;
+  --border-soft: #e5e5ea;
+  --primary: #007aff;
+  --primary-hover: #006ee6;
+  --primary-bg: rgba(0, 122, 255, 0.08);
+  --shadow: 0 1vh 3vh rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.06);
+  --radius-lg: 2vh;
+  --radius-md: 1.5vh;
+  --radius-sm: 1vh;
+  --kpi-total-color: #1d1d1f;
+  --kpi-ok-color: #28a745;
+  --kpi-alerta-color: #a10702;
+  --kpi-log-color: #e07800;
+}
+
+/**
+ * Tema Oscuro
+ */
+[data-theme="dark"] {
+  --bg: #111113;
+  --surface: #1c1c1e;
+  --surface-soft: #242426;
+  --surface-offset: #2c2c2e;
+  --text: #f5f5f7;
+  --text-muted: #98989f;
+  --border: #3a3a3c;
+  --border-soft: #2c2c2e;
+  --primary: #4da3ff;
+  --primary-hover: #3a90f0;
+  --primary-bg: rgba(77, 163, 255, 0.12);
+  --shadow: 0 1vh 3vh rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.3);
+  --kpi-total-color: #f5f5f7;
+  --kpi-ok-color: #3fcb5f;
+  --kpi-alerta-color: #ff6b6b;
+  --kpi-log-color: #ffaa3c;
+}
+
+
+body, html, #map {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: #0b0b0d; font-family: 'Segoe UI', sans-serif;
+}
+
+/* Barra de progreso superior */
+#data-refresh-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 1.5vh;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 20000;
+}
+
+#data-refresh-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    box-shadow: 0 0 15px var(--primary);
+    transition: none; /* Controlado por JS para evitar el efecto de retroceso */
+}
+
+/* Filtro para convertir mapa de relieve en modo oscuro */
+.dark-tiles {
+    filter: var(--map-filter, brightness(0.8) contrast(1.1) saturate(0.9));
+    transition: filter 3s ease-in-out;
+}
+
+#logo-container {
+    position: fixed;
+    top: 0.5vh;
+    left: 0.5vw;
+    z-index: 21000;
+    pointer-events: auto;
+    text-align: center;
+    height: 4.5vh;
+}
+
+#logo-container img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    border-radius: var(--radius-lg);
+    opacity: 0.75;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+
+#ui-overlay {
+    position: absolute; 
+    top: 3vh; /* Vuelve a la parte superior */
+    left: 3vw; 
+    z-index: 10000;
+    pointer-events: none;
+}
+
+/* Skeletons */
+.skeleton {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.skeleton.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}
+
+/* HUD Entry Animation */
+@keyframes hudIn {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.hud-item {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.hud-visible .hud-item {
+    animation: hudIn 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    pointer-events: auto;
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+
+.pais-info {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 2vh 2vw;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 5px solid #28a745;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    color: #fff;
+    transition: all 0.5s ease;
+}
+
+.pais-info h1 { 
+    margin: 0; 
+    height: 5vh; /* Altura fija para evitar saltos */
+    font-size: 4vh;
+    line-height: 5vh;
+    text-transform: uppercase; 
+    letter-spacing: 2px; 
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+}
+
+#stats-info { 
+    margin: 1vh 0 0;
+    height: 2.2vh; /* Altura fija */
+    color: #fff; 
+    font-size: 1.8vh;
+    line-height: 2.2vh;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 0.5vh 1vw;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+/* Píldora del temporizador de rotación */
+#rotation-timer {
+    position: absolute;
+    top: 3vh;
+    right: 3vw;
+    z-index: 10000;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 1.5vh 2vw;
+    border-radius: 2vh;
+    height: 4vh; /* Altura fija */
+    line-height: 4vh;
+    font-size: 3.5vh;
+    font-weight: bold;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px) rotate(-1deg); }
+    75% { transform: translateX(3px) rotate(1deg); }
+}
+
+.shake-timer {
+    animation: shake 0.15s infinite;
+}
+
+/* Controles de rotación */
+#rotation-controls {
+    position: absolute;
+    top: 12vh;
+    right: 3vw;
+    z-index: 10000;
+    display: flex;
+    gap: 1vh;
+}
+
+#rotation-controls button {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    width: 5.5vh;
+    height: 5.5vh;
+    border-radius: 1.2vh;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2vh;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+#rotation-controls button:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+#rotation-controls button:active {
+    transform: scale(0.95);
+}
+
+.legend {
+    margin-top: 2vh;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 1.5vh 1.5vw;
+    border-radius: 1vh;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 1.7vh;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+    transition: all 0.5s ease;
+}
+
+.legend-item { display: flex; align-items: center; margin-bottom: 8px; }
+.dot { 
+    width: 18px; height: 18px; border-radius: 50%; margin-right: 10px; 
+    box-shadow: 0 0 10px currentColor;
+}
+
+.verde { background: var(--kpi-ok-color); color: var(--kpi-ok-color); }
+.naranja { background: var(--kpi-log-color); color: var(--kpi-log-color); }
+.rojo { background: var(--kpi-alerta-color); color: var(--kpi-alerta-color); }
+
+/* Contenedor del Icono (Leaflet) */
+.province-rect-container {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Contenedor Rectangular por Provincia */
+.province-box {
+    position: absolute;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5vh;
+    width: 10vh; /* Espacio suficiente para 2 cápsulas pero no para 3 */
+    padding: 0;
+    box-sizing: border-box;
+    border-radius: var(--radius-sm);
+    /*
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    */
+    pointer-events: auto;
+    /* Centrado exacto sobre la coordenada */
+    transform: translate(-50%, -50%);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+/* Animación de pulso para nuevos errores */
+.pulse-alert {
+    animation: pulse-glow 2s infinite;
+    z-index: 1001;
+}
+
+@keyframes breathe-verde {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.9; }
+    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+}
+@keyframes breathe-naranja {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
+    50% { transform: translateZ(0) scale(1.15); opacity: 1; }
+}
+@keyframes breathe-rojo {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
+    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+}
+
+@keyframes alertIn {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.9); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes alertOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.8); }
+}
+
+/* Mapa Inset para regiones lejanas */
+#inset-map-container {
+    position: absolute;
+    bottom: 3vh;
+    left: 3vw;
+    width: 18vw;
+    height: 22vh;
+    z-index: 10000;
+    border-radius: 1.5vh;
+    overflow: hidden;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(18, 18, 20, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(2vh) scale(0.95);
+    transition: opacity 0.6s ease, transform 0.6s ease, visibility 0.6s;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+#inset-map-container.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+#inset-map { width: 100%; height: 100%; pointer-events: auto; }
+
+/* Panel de Notificaciones de Fallos */
+#failure-feed {
+    position: absolute;
+    top: calc(4vh + 28vh); /* Posicionado verticalmente debajo de la leyenda */
+    left: 3vw;
+    z-index: 1000; /* Por encima del overlay para asegurar visibilidad */
+    display: flex;
+    flex-direction: column;
+    gap: 1vh;
+    pointer-events: none;
+}
+
+.fail-note {
+    width: 18vw; /* Alineado con el minimapa */
+    color: #fff;
+    padding: 1.2vh 1vw;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    animation: alertIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 5px solid #fff;
+    font-size: 1.4vh;
+    backdrop-filter: blur(15px);
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+    -webkit-backdrop-filter: blur(15px);
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                padding 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.4s ease, 
+                transform 0.4s ease;
+    overflow: hidden;
+    max-height: 20vh; /* Permite el flujo de la animación de colapso */
+    display: block;
+}
+
+.fail-note.leaving {
+    opacity: 0;
+    transform: scale(0.8);
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    pointer-events: none;
+}
+
+/* Colores dinámicos según el estado */
+.fail-note.status-rojo { 
+    background: rgba(161, 7, 2, 0.4); 
+}
+.fail-note.status-naranja { 
+    background: rgba(224, 120, 0, 0.4); 
+}
+
+/* Contenedor de cola de alertas */
+#queue-status-container {
+    z-index: 100000;
+    position: absolute;
+    bottom: 26vh;
+    left: 3vw;
+    display: flex;
+    align-items: center;
+    gap: 1vh;
+    transition: all 0.3s ease;
+}
+
+#queue-status {
+    color: #ffffff66;
+    font-size: 1.6vh;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+}
+
+#clear-queue-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    width: 2.5vh;
+    height: 2.5vh;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.4vh;
+    backdrop-filter: blur(5px);
+    transition: all 0.2s ease;
+}
+
+#clear-queue-btn:hover {
+    background: rgba(161, 7, 2, 0.6);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.mini-dot {
+    min-width: 2.5vh;
+    height: 2.5vh;
+    padding: 0 0.6vh;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.2vh;
+    font-weight: bold;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Sincronización de ciclos a 2s para un pulso armónico */
+.pulse-alert .dot-verde, .legend .dot.verde { animation: breathe-verde 2s infinite ease-in-out; }
+.pulse-alert .dot-naranja, .legend .dot.naranja { animation: breathe-naranja 2s infinite ease-in-out; }
+.pulse-alert .dot-rojo, .legend .dot.rojo { animation: breathe-rojo 2s infinite ease-in-out; }
+
+.dot-verde { background: var(--kpi-ok-color); box-shadow: 0 0 1vh var(--kpi-ok-color); }
+.dot-naranja { background: var(--kpi-log-color); box-shadow: 0 0 1vh var(--kpi-log-color); }
+.dot-rojo { background: var(--kpi-alerta-color); box-shadow: 0 0 1vh var(--kpi-alerta-color); }
+
+/* Estilo del Popup de Leaflet */
+.leaflet-popup-content-wrapper {
+    background: #1c1c1e; color: #fff; border-radius: 8px;
+}
+.leaflet-popup-tip { background: #1c1c1e; }

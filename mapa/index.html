@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link rel="icon" type="image/x-icon" href="favicon.jpg" />
+    <meta charset="UTF-8">
+    <title>SicoLares - Mapa de Monitoreo</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/main.css" />
+    <script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Logo Principal
+    <div id="logo-container" class="hud-item stagger-1">
+        <img src="logo.jpg" alt="SicoLares">
+    </div> -->
+
+    <!-- Barra de progreso de actualización de datos -->
+    <div id="data-refresh-container" class="hud-item">
+        <div id="data-refresh-bar"></div>
+    </div>
+
+    <div id="map"></div>
+    
+    <!-- Información del país actual -->
+    <div id="ui-overlay" class="hud-item stagger-1">
+        <div class="pais-info" id="pais-info-card">
+            <h1 id="pais-nombre"><div class="skeleton" style="width:15vw; height:4vh"></div></h1>
+            <p id="stats-info"><div class="skeleton"></div></p>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="dot verde"></span> Operativo</div>
+            <div class="legend-item"><span class="dot naranja"></span> Errores Activos</div>
+            <div class="legend-item"><span class="dot rojo"></span> Sin Respuesta (>10m)</div>
+        </div>
+    </div>
+
+    <!-- Temporizador de rotación independiente -->
+    <div id="rotation-timer" class="hud-item stagger-2"><div class="skeleton" style="width:10vw; height:3.5vh"></div></div>
+
+    <!-- Controles de navegación de países -->
+    <div id="rotation-controls" class="hud-item stagger-3">
+        <button id="btn-prev" title="Anterior">◀</button>
+        <button id="btn-pause" title="Pausar/Reanudar">⏸</button>
+        <button id="btn-next" title="Siguiente">▶</button>
+    </div>
+
+    <!-- Contador de cola de alertas -->
+    <div id="queue-status-container" class="hud-item stagger-3">
+        <div id="queue-status"></div>
+        <div id="clear-queue-btn" title="Limpiar cola">×</div>
+    </div>
+
+    <!-- Mapa miniatura para regiones lejanas -->
+    <div id="inset-map-container">
+        <div id="inset-map"></div>
+    </div>
+
+    <div id="failure-feed"></div>
+
+    <script src="js/main.js" type="module"></script>
+</body>
+</html>

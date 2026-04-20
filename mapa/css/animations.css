@@ -1,0 +1,53 @@
+/**
+ * animations.css
+ * Keyframes para transiciones, efectos de KPI y animaciones de carga.
+ */
+
+@keyframes skeleton-loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes hudIn {
+    0% { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-3px) rotate(-1deg); }
+    75% { transform: translateX(3px) rotate(1deg); }
+}
+
+@keyframes breathe-verde {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.9; }
+    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+}
+
+@keyframes breathe-naranja {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
+    50% { transform: translateZ(0) scale(1.15); opacity: 1; }
+}
+
+@keyframes breathe-rojo {
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
+    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+}
+
+@keyframes alertIn {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.9); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes alertOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.8); }
+}
+
+/* Sincronización de ciclos a 2s para un pulso armónico */
+.pulse-alert .dot-verde, 
+.legend .dot.verde { animation: breathe-verde 2s infinite ease-in-out; }
+.pulse-alert .dot-naranja, 
+.legend .dot.naranja { animation: breathe-naranja 2s infinite ease-in-out; }
+.pulse-alert .dot-rojo, 
+.legend .dot.rojo { animation: breathe-rojo 2s infinite ease-in-out; }

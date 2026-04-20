@@ -1,0 +1,132 @@
+/* ========================================================================
+   animations.css
+   Animaciones — Keyframes para transiciones y efectos visuales.
+   ======================================================================== */
+
+/**
+ * entradaSuave: Utilizada para la carga inicial de secciones.
+ */
+@keyframes entradaSuave {
+  from {
+    opacity: 0;
+    transform: translateY(1.5vh) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes flashCambio {
+  0% {
+    background-color: rgba(255, 204, 0, 0.35);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes kpiPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes kpiFlashUp {
+  0% {
+    background-color: rgba(40, 167, 69, 0.5);
+  }
+}
+
+@keyframes kpiFlashDown {
+  0% {
+    background-color: rgba(161, 7, 2, 0.5);
+  }
+}
+
+@keyframes rowFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(1.2vh);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/**
+ * Animaciones para los indicadores de tendencia (Flechas)
+ */
+@keyframes trendEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.5) translateY(1vh);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes trendFloat {
+  0%,
+  100% {
+    transform: translateY(1vh);
+  }
+  50% {
+    transform: translateY(-1vh);
+  }
+}
+
+@keyframes trendExit {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.5) translateY(-1vh);
+  }
+}
+
+/**
+ * Animación para la aparición y desaparición suave de botones de acción
+ */
+@keyframes btnPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(0.5vh);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes btnPopOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateY(-0.5vh);
+  }
+}

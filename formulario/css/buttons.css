@@ -1,0 +1,86 @@
+/* ========================================================================
+   buttons.css
+   Botones — Estilos de botones primarios, secundarios, small e icon.
+   ======================================================================== */
+
+/* ---- Botones ---- */
+.botones {
+  display: flex;
+  align-items: center;
+  gap: 0.8vw;
+  margin-top: 2.5vh;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+/* Permite que el primer botón se pegue a la izquierda si es el único con este margen */
+.botones .btn-sep-left {
+  margin-right: auto;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4vw;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 1vh 1vw;
+  font-size: clamp(1.4vh, 0.35vw + 0.8vh, 1.8vh);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+button:hover {
+  transform: translateY(-0.1vh);
+}
+button:active {
+  transform: translateY(0);
+}
+button:focus-visible {
+  outline: 0.2vh solid var(--primary);
+  outline-offset: 0.3vh;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 122, 255, 0.35);
+}
+
+.btn-secondary {
+  background: var(--surface-offset);
+  color: var(--text);
+  border: 0.2vh solid var(--border);
+}
+.btn-secondary:hover {
+  background: var(--border-soft);
+}
+
+.btn-small {
+  padding: 0.7vh 0.8vw;
+  font-size: clamp(1.3vh, 0.3vw + 0.7vh, 1.5vh);
+}
+
+.btn-icon {
+  background: var(--surface-offset);
+  border: 0.15vh solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.8vh;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover {
+  color: var(--text);
+  background: var(--border-soft);
+}

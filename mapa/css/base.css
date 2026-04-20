@@ -1,0 +1,21 @@
+/**
+ * base.css
+ * Reglas globales, tipografía y ajustes de Leaflet.
+ */
+
+body, html, #map {
+    margin: 0; padding: 0; height: 100%; width: 100%;
+    background: #0b0b0d; font-family: 'Segoe UI', sans-serif;
+}
+
+/* Filtro para convertir mapa de relieve en modo oscuro */
+.dark-tiles {
+    filter: var(--map-filter, brightness(0.8) contrast(1.1) saturate(0.9));
+    transition: filter 3s ease-in-out;
+}
+
+/* Estilo del Popup de Leaflet */
+.leaflet-popup-content-wrapper {
+    background: #1c1c1e; color: #fff; border-radius: 8px;
+}
+.leaflet-popup-tip { background: #1c1c1e; }

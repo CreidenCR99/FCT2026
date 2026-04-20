@@ -1,0 +1,185 @@
+/**
+ * Módulo: api.js
+ * Capa de abstracción para la comunicación con el backend (datos.php).
+ */
+import { appState, CONFIG } from './state.js';
+import { aplicarFiltroHorario, actualizarStatsUI, sincronizarLeyenda } from './ui.js';
+import { procesarColaAlertas } from './notifications.js';
+import { getCache, setCache } from './db.js';
+
+// --- Inicialización del Worker ---
+const apiWorker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+
+/** 
+ * URL base para las peticiones desde el Worker (Resuelve problemas de 404 por rutas relativas)
+ */
+const API_BASE_URL = new URL('../', import.meta.url).href;
+
+/**
+ * Gestor de promesas para sincronizar el Worker con las llamadas await del hilo principal.
+ */
+const pendingRequests = new Map();
+
+apiWorker.onmessage = (e) => {
+  const { mode, status, provincias, alertas, newAlerts, data, error } = e.data;
+  const resolve = pendingRequests.get(mode);
+
+  if (!resolve) return;
+  pendingRequests.delete(mode);
+
+  if (status === 500) {
+    console.error(`Error en Worker (${mode}):`, error);
+    resolve();
+    return;
+  }
+
+  if (status === 200) {
+    if (mode === 'paises') {
+      appState.paises = data;
+      setCache('paises', data);
+    } else if (mode === 'mapa_data') {
+      appState.provincias = provincias;
+      newAlerts.forEach(a => appState.alertQueue.push(a));
+      appState.lastAlerts = new Set(alertas.map(a => a.sn));
+
+      setCache('mapa_data', { provincias, alertas });
+
+      procesarColaAlertas();
+      renderizarPuntosMapa();
+      actualizarStatsUI();
+    }
+  }
+  resolve();
+};
+
+/**
+ * Solicita al servidor el catálogo de países habilitados para la rotación.
+ * @async
+ * @returns {Promise<void>}
+ */
+export async function cargarPaises() {
+  // Intentar recuperación desde caché para carga instantánea
+  const cached = await getCache('paises');
+  if (cached) appState.paises = cached;
+
+  return new Promise((resolve) => {
+    pendingRequests.set('paises', resolve);
+    apiWorker.postMessage({ mode: 'paises', url: `${API_BASE_URL}datos.php?modo=paises` });
+    
+    if (cached) resolve(); // Resolvemos de inmediato si tenemos caché
+  });
+}
+
+/**
+ * Sincroniza el estado del mapa con el servidor. 
+ * Actualiza provincias, detecta nuevos fallos y renderiza los marcadores.
+ * @async
+ * @returns {Promise<void>}
+ */
+export async function actualizarDatos() {
+  // Recuperar datos previos de provincias para pintar el mapa al instante
+  const cached = await getCache('mapa_data');
+  const hasCache = cached && !appState.provincias.length;
+
+  if (hasCache) {
+    appState.provincias = cached.provincias;
+    appState.lastAlerts = new Set((cached.alertas || []).map(a => a.sn));
+    renderizarPuntosMapa();
+    actualizarStatsUI();
+  }
+
+  return new Promise((resolve) => {
+    aplicarFiltroHorario();
+    appState.msNextData = CONFIG.MS_DATOS;
+
+    const bar = document.getElementById("data-refresh-bar");
+    if (bar) {
+      bar.style.transition = "none";
+      bar.style.width = "0%";
+    }
+
+    pendingRequests.set('mapa_data', resolve);
+    apiWorker.postMessage({
+      mode: 'mapa_data',
+      url: `${API_BASE_URL}datos.php?modo=mapa_data`,
+      payload: { lastAlerts: appState.lastAlerts }
+    });
+
+    if (hasCache) resolve(); // Resolvemos de inmediato si ya pintamos el caché
+  });
+}
+
+/**
+ * Renderizado inteligente de marcadores.
+ * Actualiza marcadores existentes o crea nuevos, eliminando los que ya no tienen datos.
+ * @returns {void}
+ */
+function renderizarPuntosMapa() {
+  const codigosNuevos = new Set();
+
+  // Calculamos un retraso negativo basado en el reloj del sistema para que todas
+  // las animaciones de 2s (definidas en CSS) pulsen exactamente al mismo tiempo,
+  // independientemente de cuándo se crearon los elementos en el DOM.
+  const syncDelay = -(performance.now() % 2000) / 1000;
+  sincronizarLeyenda();
+
+  appState.provincias.forEach((prov) => {
+    const cod = prov.id_pais + "_" + prov.nombre; // ID único compuesto
+    codigosNuevos.add(cod);
+
+    let iconHTML = "";
+    let hasData = false;
+    const hasCritical = prov.counts.rojo > 0 || prov.counts.naranja > 0;
+
+    ["verde", "rojo", "naranja"].forEach((status) => {
+      const count = prov.counts[status];
+      if (count <= 0) return;
+      hasData = true;
+      iconHTML += `<div class="mini-dot dot-${status}" style="animation-delay: ${syncDelay}s">${count}</div>`;
+    });
+
+    if (!hasData) return;
+
+    const fullHTML = `<div class="province-box ${hasCritical ? "pulse-alert" : ""}" style="animation-delay: ${syncDelay}s">${iconHTML}</div>`;
+
+    const updateMarker = (mapInstance, storageMap, coords) => {
+      if (storageMap.has(cod)) {
+        const m = storageMap.get(cod);
+        if (m._lastHTML !== fullHTML) {
+          // OPTIMIZACIÓN: Usamos morphdom para parchear el marcador existente sin recrearlo
+          const iconElement = m.getElement()?.querySelector('.province-box');
+          if (iconElement) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = fullHTML;
+            morphdom(iconElement, tempDiv.firstChild);
+          } else {
+            m.setIcon(L.divIcon({ className: "province-rect-container", html: fullHTML, iconSize: [0, 0] }));
+          }
+          m._lastHTML = fullHTML;
+        }
+      } else {
+        const icon = L.divIcon({ className: "province-rect-container", html: fullHTML, iconSize: [0, 0] });
+        const m = L.marker(coords, { icon }).addTo(mapInstance);
+        m.bindPopup(`<strong>${prov.nombre}</strong>`);
+        m._lastHTML = fullHTML;
+        storageMap.set(cod, m);
+      }
+    };
+
+    updateMarker(appState.map, appState.markersMap, [prov.lat, prov.lng]);
+    updateMarker(appState.insetMap, appState.insetMarkersMap, [prov.lat, prov.lng]);
+  });
+
+  // Limpieza de marcadores huérfanos
+  const limpiarHuerfanos = (mapInstance, storageMap) => {
+    for (const [cod, marker] of storageMap.entries()) {
+      if (!codigosNuevos.has(cod)) {
+        mapInstance.removeLayer(marker);
+        storageMap.delete(cod);
+      }
+    }
+  };
+
+  limpiarHuerfanos(appState.map, appState.markersMap);
+  limpiarHuerfanos(appState.insetMap, appState.insetMarkersMap);
+  };
