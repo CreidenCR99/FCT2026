@@ -47,9 +47,19 @@
     font-size: 1.2vh;
     font-weight: bold;
     text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
-    transition: transform 0.3s ease;
+    animation: dot-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: background-color 0.4s ease, transform 0.3s ease;
     will-change: transform;
     backface-visibility: hidden;
+}
+
+.mini-dot {
+    animation: dot-pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    transition: background-color 0.4s ease, transform 0.3s ease;
+}
+
+.dot-updating {
+    animation: dot-pulse-update 0.5s ease-out !important;
 }
 
 .dot-verde { background: var(--kpi-ok-color); box-shadow: 0 0 1vh var(--kpi-ok-color); }
@@ -60,7 +70,7 @@
 #inset-map-container {
     position: absolute;
     bottom: 3vh;
-    left: 3vw;
+    left: 1vh;
     width: 18vw;
     height: 22vh;
     z-index: 10000;

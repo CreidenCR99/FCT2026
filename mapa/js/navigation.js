@@ -4,6 +4,18 @@
  */
 import { appState, CONFIG, INSET_VIEWS } from './state.js';
 import { actualizarStatsUI } from './ui.js';
+import { renderCarousel } from './notifications.js';
+
+// --- Configuración de Vistas por País ---
+
+/**
+ * Determina el nivel de zoom óptimo para cada país.
+ * @param {string} nombre - Nombre del país.
+ * @returns {number} Nivel de zoom (6.5 por defecto).
+ */
+const getZoomPorPais = (nombre) => {
+  return CONFIG.ZOOM_PAISES[nombre.toLowerCase()] || CONFIG.ZOOM_DEFAULT;
+};
 
 // --- Gestión de Navegación ---
 
@@ -13,15 +25,12 @@ import { actualizarStatsUI } from './ui.js';
  * @returns {void}
  */
 export function navegarPais(dir) {
+  if (document.hidden) return; // No rotar si la pestaña está minimizada
+
   appState.paisActualIdx = (appState.paisActualIdx + dir + appState.paises.length) % appState.paises.length;
   const pais = appState.paises[appState.paisActualIdx];
   appState.msNextRotation = CONFIG.MS_ROTACION;
   enfocarPais(pais);
-
-  clearInterval(appState.rotacionInterval);
-  if (!appState.estaPausado) {
-    appState.rotacionInterval = setInterval(() => navegarPais(1), CONFIG.MS_ROTACION);
-  }
 }
 
 /**
@@ -32,14 +41,7 @@ export function togglePausa() {
   appState.estaPausado = !appState.estaPausado;
   const btn = document.getElementById("btn-pause");
   btn.textContent = appState.estaPausado ? "▶" : "⏸";
-
-  if (appState.estaPausado) {
-    clearInterval(appState.rotacionInterval);
-    appState.rotacionInterval = null;
-  } else {
-    appState.msNextRotation = CONFIG.MS_ROTACION;
-    appState.rotacionInterval = setInterval(() => navegarPais(1), CONFIG.MS_ROTACION);
-  }
+  if (!appState.estaPausado) appState.msNextRotation = CONFIG.MS_ROTACION;
 }
 
 /**
@@ -63,7 +65,10 @@ export function enfocarPais(pais) {
     insetContainer.classList.remove('active');
   }
 
-  appState.map.flyTo([pais.Latitud, pais.Longitud], pais.Zoom || 6.5, {
+  const zoom = getZoomPorPais(pais.Nombre);
+
+  appState.isProgrammaticMove = true;
+  appState.map.flyTo([pais.Latitud, pais.Longitud], zoom, {
     animate: true,
     duration: 5,
   });

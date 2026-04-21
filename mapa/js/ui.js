@@ -31,6 +31,9 @@ export function aplicarFiltroHorario() {
  * @returns {void}
  */
 export function actualizarTimers(delta) {
+  // Si la pestaña no está activa, pausamos todo el avance de tiempos
+  if (document.hidden) return;
+
   // Barra de progreso superior
   const bar = document.getElementById("data-refresh-bar");
   if (bar) {
@@ -82,7 +85,7 @@ export function actualizarStatsUI() {
 
   const statsEl = document.getElementById("stats-info");
   if (statsEl && typeof morphdom === 'function') {
-    const newContent = `<span><b style="color:var(--kpi-ok-color)">${ok}</b> Activos | <b style="color:var(--kpi-log-color)">${alerta}</b> Errores | <b style="color:var(--kpi-alerta-color)">${rojo}</b> Sin respuesta</span>`;
+    const newContent = `<span><b style="color:var(--kpi-ok-color)">${ok}</b> Activos   <b style="color:var(--kpi-log-color)">${alerta}</b> Errores   <b style="color:var(--kpi-alerta-color)">${rojo}</b> Sin respuesta</span>`;
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = newContent;
     morphdom(statsEl, tempDiv, { childrenOnly: true });

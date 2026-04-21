@@ -220,9 +220,9 @@
     display: flex;
     font-size: 2.8vh;
   }
-  #tablaSection:fullscreen .logo-fullscreen svg {
-    width: 4vh;
-    height: 4vh;
+  #tablaSection:fullscreen .logo-fullscreen img {
+    height: 5vh;
+    width: auto;
   }
 
   /* Header simplificado en presentación: sin h2, sin search, sin CSV */
@@ -466,9 +466,9 @@
   display: flex;
   font-size: 2.8vh;
 }
-#tablaSection:fullscreen .logo-fullscreen svg {
-  width: 4vh;
-  height: 4vh;
+#tablaSection:fullscreen .logo-fullscreen img {
+  height: 5vh;
+  width: auto;
 }
 
 /* Header simplificado en presentación: sin h2, sin search, sin CSV */

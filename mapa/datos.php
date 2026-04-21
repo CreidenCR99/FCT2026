@@ -166,7 +166,8 @@ if ($modo === 'mapa_data') {
     // 2. Consultamos máquinas y sus errores para determinar el color de la provincia
     // Lógica: Rojo si hay alguna offline (>10m), Naranja si hay errores activos, Verde si todo OK.
     $sqlMaquinas = "SELECT m.provincia, m.NumeroSerie, m.Descripcion, m.UltimoControl, m.MonitorizarAlertas,
-                    (SELECT COUNT(*) FROM Log_Errores le WHERE le.NumeroSerie = m.NumeroSerie AND le.Activo = 1) as Errores
+                    (SELECT COUNT(*) FROM Log_Errores le WHERE le.NumeroSerie = m.NumeroSerie AND le.Activo = 1) as Errores,
+                    (SELECT STRING_AGG(le2.CodigoError, ', ') FROM Log_Errores le2 WHERE le2.NumeroSerie = m.NumeroSerie AND le2.Activo = 1) as Codigos
                     FROM Maquinas m 
                     WHERE m.MonitorizarEstado = 1";
     
@@ -183,54 +184,53 @@ if ($modo === 'mapa_data') {
         $codProv = $m['provincia'];
         if (!isset($provincias[$codProv])) continue;
 
-        // 1. Determinar estado de conexión (Rojo vs Verde)
+        // 1. Determinar estado de conexión
         $isOffline = false;
         if ($m['UltimoControl']) {
             $uc = $m['UltimoControl'];
             // Sincronización con formato de 14 dígitos (YYYYMMDDHHMMSS)
             $fechaUC = DateTime::createFromFormat('YmdHi', substr($uc, 0, 12));
-            if ($fechaUC) {
-                $diff = ($ahora->getTimestamp() - $fechaUC->getTimestamp()) / 60;
-                if ($diff > 10) $isOffline = true;
-            } else {
-                $isOffline = true;
-            }
-        } else {
-            $isOffline = true;
-        }
+            if ($fechaUC) { $diff = ($ahora->getTimestamp() - $fechaUC->getTimestamp()) / 60; if ($diff > 10) $isOffline = true; } 
+            else { $isOffline = true; }
+        } else { $isOffline = true; }
 
-        // 2. Conteo de errores activos (Naranja)
-        // Sumamos el total de errores de la máquina a la provincia si se monitorizan alertas
+        // 2. Gestión de Alertas y Errores
         $numErrores = (int)($m['Errores'] ?? 0);
         $monitorizaAlertas = (int)($m['MonitorizarAlertas'] ?? 0);
+        $tieneErrores = ($monitorizaAlertas === 1 && $numErrores > 0);
 
-        if ($monitorizaAlertas === 1 && $numErrores > 0) {
-            $provincias[$codProv]['counts']['naranja'] += $numErrores;
-            
-            // Notificación de errores
+        if ($tieneErrores) {
             $alertas[] = [
                 "sn" => $m['NumeroSerie'] . "_err_" . $numErrores, // SN dinámico para disparar notificación si cambia el conteo
                 "nombre" => $m['Descripcion'],
                 "status" => "naranja",
-                "provincia" => $provincias[$codProv]['nombre']
+                "provincia" => $provincias[$codProv]['nombre'],
+                "codigoError" => $m['Codigos'] ?? 'ERROR'
             ];
         }
 
-        // 3. Conteo de Conectividad (Rojo / Verde)
         if ($isOffline) {
-            $provincias[$codProv]['counts']['rojo']++;
-            // Notificación de desconexión
             $alertas[] = [
                 "sn" => $m['NumeroSerie'] . "_offline",
                 "nombre" => $m['Descripcion'],
                 "status" => "rojo",
-                "provincia" => $provincias[$codProv]['nombre']
+                "provincia" => $provincias[$codProv]['nombre'],
+                "codigoError" => "CONEXIÓN"
             ];
+        }
+
+        // 3. Conteo consolidado para el Mapa
+        // ROJO: Máquinas sin respuesta (Conteo de máquinas físicas)
+        // VERDE: Máquinas activas/conectadas (Conteo de máquinas físicas)
+        // NARANJA: Total de errores activos (Acumulativo: 1 máquina puede sumar N errores)
+        if ($isOffline) {
+            $provincias[$codProv]['counts']['rojo']++;
         } else {
-            // Solo contamos como Verde (Operativo) si no tiene errores y está online
-            if ($numErrores === 0 || $monitorizaAlertas === 0) {
-                $provincias[$codProv]['counts']['verde']++;
-            }
+            $provincias[$codProv]['counts']['verde']++;
+        }
+
+        if ($monitorizaAlertas === 1) {
+            $provincias[$codProv]['counts']['naranja'] += $numErrores;
         }
     }
 

@@ -7,14 +7,14 @@
     <title>SicoLares - Mapa de Monitoreo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
-    <!-- Logo Principal
     <div id="logo-container" class="hud-item stagger-1">
-        <img src="logo.jpg" alt="SicoLares">
-    </div> -->
+        <img src="LOGO_SicoLares.png" alt="SicoLares">
+    </div>
 
     <!-- Barra de progreso de actualización de datos -->
     <div id="data-refresh-container" class="hud-item">
@@ -49,7 +49,6 @@
     <!-- Contador de cola de alertas -->
     <div id="queue-status-container" class="hud-item stagger-3">
         <div id="queue-status"></div>
-        <div id="clear-queue-btn" title="Limpiar cola">×</div>
     </div>
 
     <!-- Mapa miniatura para regiones lejanas -->
@@ -57,8 +56,12 @@
         <div id="inset-map"></div>
     </div>
 
-    <div id="failure-feed"></div>
+    <!-- Contenedor del Carrusel de Fallos -->
+    <div id="failure-feed" class="swiper">
+        <div class="swiper-wrapper" id="failure-feed-wrapper"></div>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="js/main.js" type="module"></script>
 </body>
 </html>

@@ -4,10 +4,11 @@
  */
 import { appState, CONFIG } from './state.js';
 import { aplicarFiltroHorario, actualizarStatsUI, sincronizarLeyenda } from './ui.js';
-import { procesarColaAlertas } from './notifications.js';
+import { syncAlerts } from './notifications.js';
 import { getCache, setCache } from './db.js';
 
 // --- Inicialización del Worker ---
+
 const apiWorker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
 
 /** 
@@ -39,12 +40,9 @@ apiWorker.onmessage = (e) => {
       setCache('paises', data);
     } else if (mode === 'mapa_data') {
       appState.provincias = provincias;
-      newAlerts.forEach(a => appState.alertQueue.push(a));
-      appState.lastAlerts = new Set(alertas.map(a => a.sn));
-
       setCache('mapa_data', { provincias, alertas });
 
-      procesarColaAlertas();
+      syncAlerts(alertas);
       renderizarPuntosMapa();
       actualizarStatsUI();
     }
@@ -83,12 +81,21 @@ export async function actualizarDatos() {
 
   if (hasCache) {
     appState.provincias = cached.provincias;
+    // Restauramos el historial para comparar qué es nuevo realmente
     appState.lastAlerts = new Set((cached.alertas || []).map(a => a.sn));
+    // Cargamos el carrusel inicial desde caché
+    syncAlerts(cached.alertas || []);
     renderizarPuntosMapa();
     actualizarStatsUI();
   }
 
   return new Promise((resolve) => {
+    // Si la pestaña está minimizada, pausamos la petición al servidor
+    if (document.hidden) {
+      resolve();
+      return;
+    }
+
     aplicarFiltroHorario();
     appState.msNextData = CONFIG.MS_DATOS;
 
@@ -96,6 +103,7 @@ export async function actualizarDatos() {
     if (bar) {
       bar.style.transition = "none";
       bar.style.width = "0%";
+      void bar.offsetWidth; // Forzar reflow para que el reinicio visual sea instantáneo
     }
 
     pendingRequests.set('mapa_data', resolve);
@@ -151,7 +159,18 @@ function renderizarPuntosMapa() {
           if (iconElement) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = fullHTML;
-            morphdom(iconElement, tempDiv.firstChild);
+            
+            // Usamos morphdom con hooks para animar los cambios de cifras en los puntos
+            morphdom(iconElement, tempDiv.firstChild, {
+              onBeforeElUpdated: (fromEl, toEl) => {
+                if (fromEl.classList.contains('mini-dot') && fromEl.textContent !== toEl.textContent) {
+                  fromEl.classList.remove('dot-updating');
+                  void fromEl.offsetWidth; // Forzar reflow para reiniciar la animación
+                  fromEl.classList.add('dot-updating');
+                }
+                return true;
+              }
+            });
           } else {
             m.setIcon(L.divIcon({ className: "province-rect-container", html: fullHTML, iconSize: [0, 0] }));
           }
@@ -182,4 +201,4 @@ function renderizarPuntosMapa() {
 
   limpiarHuerfanos(appState.map, appState.markersMap);
   limpiarHuerfanos(appState.insetMap, appState.insetMarkersMap);
-  };
+};

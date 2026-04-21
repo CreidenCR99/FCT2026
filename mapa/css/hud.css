@@ -19,34 +19,36 @@
     transition: none;
 }
 
+/* Posicionamiento y estilo del Logo */
 #logo-container {
     position: fixed;
-    top: 0.5vh;
-    left: 0.5vw;
-    z-index: 21000;
-    pointer-events: auto;
-    text-align: center;
-    height: 4.5vh;
+    bottom: 3vh;
+    right: 1vh;
+    background: white;
+    padding: 10px;
+    border-radius: 2vh;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 24000;
 }
-
-#logo-container img {
-    height: 100%;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-    border-radius: var(--radius-lg);
-    opacity: 0.75;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-}
+#logo-container img { height: 50px; display: block; }
 
 #ui-overlay {
     position: absolute; 
-    top: 3vh;
-    left: 3vw; 
+    top: 2.5vh;
+    left: 1vh; 
     z-index: 10000;
-    pointer-events: none;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 1.5vh 2vw;
+    border-radius: 2vh;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 5px solid #28a745 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5vh;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 /* Control de entrada HUD */
@@ -66,16 +68,12 @@
 
 .pais-info {
     position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    padding: 2vh 2vw;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 5px solid #28a745;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 0 0 1vw !important;
+    border: none !important;
+    box-shadow: none !important;
     color: #fff;
-    transition: all 0.5s ease;
 }
 
 .pais-info h1 { 
@@ -103,7 +101,7 @@
 #rotation-timer {
     position: absolute;
     top: 3vh;
-    right: 3vw;
+    right: 1vh;
     z-index: 10000;
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(15px);
@@ -125,17 +123,13 @@
 #rotation-controls {
     position: absolute;
     top: 12vh;
-    right: 3vw;
+    right: 1vh;
     z-index: 10000;
     display: flex;
     gap: 1vh;
 }
 
 #rotation-controls button {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     width: 5.5vh;
     height: 5.5vh;
@@ -145,24 +139,31 @@
     align-items: center;
     justify-content: center;
     font-size: 2vh;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .legend {
-    margin-top: 2vh;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(15px);
-    padding: 1.5vh 1.5vw;
-    border-radius: 1vh;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0 !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    border: none !important;
+    display: flex !important;
+    flex-direction: row;
+    gap: 1.5vw;
     color: #fff;
     font-size: 1.7vh;
     text-shadow: 1px 1px 0 rgba(0,0,0,0.15), -1px -1px 0 rgba(0,0,0,0.15), 1px -1px 0 rgba(0,0,0,0.15), -1px 1px 0 rgba(0,0,0,0.15);
 }
 
-.legend-item { display: flex; align-items: center; margin-bottom: 8px; }
-.dot { width: 18px; height: 18px; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 10px currentColor; }
+.legend-item { display: flex; align-items: center; margin-bottom: 0 !important; }
+.dot { width: 1.5vh; height: 1.5vh; border-radius: 50%; margin-right: 8px; box-shadow: 0 0 10px currentColor; }
 
 /* Skeletons */
 .skeleton {

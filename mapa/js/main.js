@@ -6,6 +6,7 @@ import { appState, CONFIG } from './state.js';
 import { cargarPaises, actualizarDatos } from './api.js';
 import { mostrarSkeleton, aplicarFiltroHorario, actualizarTimers } from './ui.js';
 import { navegarPais, togglePausa, enfocarPais } from './navigation.js';
+import { iniciarCarrusel } from './notifications.js';
 
 // --- Inicialización del Sistema ---
 
@@ -19,12 +20,12 @@ async function init() {
   appState.map = L.map("map", { 
     zoomControl: false, 
     preferCanvas: true,
-    dragging: false,
-    scrollWheelZoom: false,
+    dragging: true,
+    scrollWheelZoom: true,
     doubleClickZoom: false,
-    touchZoom: false,
+    touchZoom: true,
     boxZoom: false,
-    keyboard: false 
+    keyboard: true 
   }).setView([40, -3], 2.5);
   
   // Inicializamos el insetMap con una vista por defecto (Canarias) para que empiece a descargar teselas de inmediato
@@ -59,13 +60,15 @@ async function init() {
   ]);
 
   baseTiles.addTo(appState.map);
-  L.tileLayer(CONFIG.TERRAIN_LINES, { minZoom: 5, maxZoom: 6.75, ext: 'png' }).addTo(appState.map);
+  L.tileLayer(CONFIG.TERRAIN_LINES, { minZoom: 5, maxZoom: 6.9, ext: 'png' }).addTo(appState.map);
+  L.tileLayer(CONFIG.TERRAIN_LINES, { minZoom: 7.1, maxZoom: 20, ext: 'png' }).addTo(appState.map);
   insetTiles.addTo(appState.insetMap);
 
   mostrarSkeleton();
   await cargarPaises();
   aplicarFiltroHorario();
   await actualizarDatos();
+  iniciarCarrusel();
 
   // --- Registro de Eventos ---
 
@@ -79,18 +82,20 @@ async function init() {
   document.getElementById("btn-next").onclick = () => navegarPais(1);
   document.getElementById("btn-pause").onclick = togglePausa;
 
-  // Lógica para limpiar la cola de alertas
-  document.getElementById("clear-queue-btn").onclick = () => {
-    appState.alertQueue = [];
-    const container = document.getElementById("queue-status-container");
-    if (container) container.style.opacity = "0";
-  };
-
-  appState.dataInterval = setInterval(actualizarDatos, CONFIG.MS_DATOS);
-  appState.rotacionInterval = setInterval(() => navegarPais(1), CONFIG.MS_ROTACION);
-
   appState.msNextData = CONFIG.MS_DATOS;
   appState.msNextRotation = CONFIG.MS_ROTACION;
+
+  // --- Lógica de Inactividad del Mapa ---
+  const resetInactivityTimer = () => {
+    if (appState.isProgrammaticMove) return; // No resetear si el mapa se mueve por la rotación automática
+    clearTimeout(appState.inactivityTimeout);
+    appState.inactivityTimeout = setTimeout(() => {
+      enfocarPais(appState.paises[appState.paisActualIdx]);
+    }, 30000); // 30 segundos
+  };
+
+  appState.map.on('movestart zoomstart', resetInactivityTimer);
+  appState.map.on('moveend zoomend', () => { appState.isProgrammaticMove = false; });
 
   // --- Bucle de Animación de Alto Rendimiento (60 FPS) ---
   let ultimaMarcaTiempo = performance.now();
@@ -100,9 +105,23 @@ async function init() {
     ultimaMarcaTiempo = marcaTiempoActual;
 
     actualizarTimers(delta);
+
+    // Control de ejecución: Si el tiempo expira, disparamos las acciones
+    if (appState.msNextData <= 0 && !document.hidden) {
+      actualizarDatos();
+    }
+
+    if (appState.msNextRotation <= 0 && !appState.estaPausado && !document.hidden) {
+      navegarPais(1);
+    }
+
     requestAnimationFrame(buclePrincipal);
   };
   requestAnimationFrame(buclePrincipal);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) ultimaMarcaTiempo = performance.now();
+  });
 
   // Esperamos la señal de los mapas listos antes del primer flyTo
   await listoParaMostrar;
