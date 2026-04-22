@@ -41,10 +41,10 @@
 					</div>
 				</div>
 				<div class="botones">
-					<button type="button" id="mmOpenBtn" class="btn-secondary" style="border-color: var(--primary); color: var(--primary);">
+					<button type="button" id="registroMaquinasBtn" class="btn-secondary btn-primary-outline">
 						<svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 							<path d="M12 5v14M5 12h14" />
-						</svg> Registro de máquinas </button>
+						</svg> Registro de entidades </button>
 					<button type="button" id="buscadorMaestroBtn" class="btn-secondary btn-sep-left">
 						<svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 							<circle cx="11" cy="11" r="8" />
@@ -108,11 +108,14 @@
 				<div class="modal-content" style="width: 50vw;">
 					<div class="modal-header">
 						<h2 id="mmTitle">Alta / Mantenimiento de Máquina</h2>
-						<button type="button" id="cerrarMMBtn" class="btn-icon">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
-						</button>
+						<div class="header-actions">
+							<button type="button" id="mmBtnBack" class="btn-back btn-small btn-secondary"></button>
+							<button type="button" id="cerrarMMBtn" class="cerrar-btn">
+								<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+									<path d="M18 6L6 18M6 6l12 12" />
+								</svg>
+							</button>
+						</div>
 					</div>
 					<form id="formMaquinasMaster">
 						<div class="form-grid">
@@ -204,44 +207,46 @@
 								</label>
 								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Monitorizar Alertas <input type="checkbox" name="mon_alertas" id="mmMonAlerta">
 								</label>
+								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Máquina Activa <input type="checkbox" name="activo" id="mmActivo" checked>
+								</label>
 							</div>
 						</div>
 						<div class="search-nav-group" style="margin-top: 2vh;">
-							<button type="button" id="mmBtnFirst" class="btn-secondary btn-small">
+							<button type="button" id="mmBtnFirst" class="btn-secondary btn-small btn-first">
 								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
 								</svg>
 							</button>
-							<button type="button" id="mmBtnPrev" class="btn-secondary btn-small">
+							<button type="button" id="mmBtnPrev" class="btn-secondary btn-small btn-prev">
 								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M15 18l-6-6 6-6" />
 								</svg>
 							</button>
-							<span id="mmCount" style="align-self: center; min-width: 80px; text-align: center; font-size: 0.9em; color: var(--text-muted);">Nuevo</span>
-							<button type="button" id="mmBtnNext" class="btn-secondary btn-small">
+							<span id="mmCount" class="nav-count" style="align-self: center; min-width: 80px; text-align: center; font-size: 0.9em; color: var(--text-muted);">Nuevo</span>
+							<button type="button" id="mmBtnNext" class="btn-secondary btn-small btn-next">
 								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M9 18l6-6-6-6" />
 								</svg>
 							</button>
-							<button type="button" id="mmBtnLast" class="btn-secondary btn-small">
+							<button type="button" id="mmBtnLast" class="btn-secondary btn-small btn-last">
 								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M13 17l5-5-5-5M6 17l5-5-5-5" />
 								</svg>
 							</button>
 						</div>
 						<div class="botones" style="justify-content: center; margin-top: 3vh;">
-							<button type="button" id="mmBtnEliminar" class="btn-secondary" style="border-color: var(--kpi-alerta-color); color: var(--kpi-alerta-color); display:none">
+							<button type="button" id="mmBtnEliminar" class="btn-secondary btn-eliminar" style="border-color: var(--kpi-alerta-color); color: var(--kpi-alerta-color); display:none">
 								<svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
 								</svg> Eliminar </button>
-							<button type="button" id="mmBtnNuevo" class="btn-secondary">Limpiar / Nuevo</button>
+							<button type="button" id="mmBtnNuevo" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
 							<button type="submit" class="btn-primary">Guardar Máquina</button>
 						</div>
 					</form>
 				</div>
 			</div>
 			<!-- Modal Maestro de Búsqueda (F2) -->
-			<div id="modalBusqueda" class="modal" style="display: none;">
+			<div id="modalBusqueda" class="modal" style="display: none; z-index: 2000;">
 				<div class="modal-content" style="width: 40vw;">
 					<div class="modal-header">
 						<h2>Maestro de Búsquedas</h2>
@@ -260,6 +265,8 @@
 									<option value="provincias">Provincias</option>
 									<option value="clientes">Clientes</option>
 									<option value="maquinas">Máquinas</option>
+									<option value="errores">Errores</option>
+									<option value="paises">Países</option>
 								</select>
 							</div>
 							<div class="form-control">
@@ -401,6 +408,300 @@
 						</div>
 					</form>
 				</div>
+			</div>
+		</div>
+
+		<!-- Modal para registrar Organismos -->
+		<div id="modalRegistroOrganismo" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2>Registrar Organismo</h2>
+					<div class="header-actions">
+						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" id="cerrarRegistroOrganismoBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<form id="formRegistroOrganismo">
+					<div class="form-control">
+						<label for="inputOrganismoCodigo">Código (4 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<div class="form-row-inline">
+							<input type="text" id="inputOrganismoCodigo" name="codigo" maxlength="4" required>
+							<button type="button" class="btn-icon btn-search" title="Buscar Organismo">
+								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+									<circle cx="11" cy="11" r="8" />
+									<path d="M21 21l-4.35-4.35" />
+								</svg>
+							</button>
+						</div>
+					</div>
+					<div class="form-control">
+						<label for="inputOrganismoNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+						<input type="text" id="inputOrganismoNombre" name="nombre" maxlength="150" required>
+					</div>
+					<div class="search-nav-group">
+						<button type="button" class="btn-secondary btn-small btn-first"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-prev"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6" /></svg></button>
+						<span class="nav-count">Nuevo</span>
+						<button type="button" class="btn-secondary btn-small btn-next"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-last"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" /></svg></button>
+					</div>
+					<div class="botones botones-center">
+						<button type="button" class="btn-eliminar" style="display:none">Eliminar</button>
+						<button type="button" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
+						<button type="submit" class="btn-primary">Guardar Organismo</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Modal para registrar Clientes -->
+		<div id="modalRegistroCliente" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2>Registrar Cliente</h2>
+					<div class="header-actions">
+						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" id="cerrarRegistroClienteBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<form id="formRegistroCliente">
+					<div class="form-control">
+						<label for="inputClienteCodigo">Código (6 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<div class="form-row-inline">
+							<input type="text" id="inputClienteCodigo" name="codigo" maxlength="6" required>
+							<button type="button" class="btn-icon btn-search" title="Buscar Cliente">
+								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+									<circle cx="11" cy="11" r="8" />
+									<path d="M21 21l-4.35-4.35" />
+								</svg>
+							</button>
+						</div>
+					</div>
+					<div class="form-control">
+						<label for="inputClienteNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+						<input type="text" id="inputClienteNombre" name="nombre" maxlength="150" required>
+					</div>
+					<div class="search-nav-group">
+						<button type="button" class="btn-secondary btn-small btn-first"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-prev"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6" /></svg></button>
+						<span class="nav-count">Nuevo</span>
+						<button type="button" class="btn-secondary btn-small btn-next"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-last"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" /></svg></button>
+					</div>
+					<div class="botones botones-center">
+						<button type="button" class="btn-eliminar" style="display:none">Eliminar</button>
+						<button type="button" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
+						<button type="submit" class="btn-primary">Guardar Cliente</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Modal para registrar Errores -->
+		<div id="modalRegistroError" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2>Registrar Error</h2>
+					<div class="header-actions">
+						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" id="cerrarRegistroErrorBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<form id="formRegistroError">
+					<div class="form-control">
+						<label for="inputErrorCodigo">Código (4 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<div class="form-row-inline">
+							<input type="text" id="inputErrorCodigo" name="codigo" maxlength="4" required>
+							<button type="button" class="btn-icon btn-search" title="Buscar Error">
+								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+									<circle cx="11" cy="11" r="8" />
+									<path d="M21 21l-4.35-4.35" />
+								</svg>
+							</button>
+						</div>
+					</div>
+					<div class="form-control">
+						<label for="inputErrorNombre">Descripción <label style="color: red; display: inline;">*</label></label>
+						<input type="text" id="inputErrorNombre" name="nombre" maxlength="150" required>
+					</div>
+					<div class="search-nav-group">
+						<button type="button" class="btn-secondary btn-small btn-first"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-prev"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6" /></svg></button>
+						<span class="nav-count">Nuevo</span>
+						<button type="button" class="btn-secondary btn-small btn-next"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-last"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" /></svg></button>
+					</div>
+					<div class="botones botones-center">
+						<button type="button" class="btn-eliminar" style="display:none">Eliminar</button>
+						<button type="button" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
+						<button type="submit" class="btn-primary">Guardar Error</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Modal para seleccionar tipo de registro (Panel de selección) -->
+		<div id="modalRegistroMaestro" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2 id="modalRegistroMaestroTitle">¿Qué desea registrar?</h2>
+					<div class="header-actions">
+						<button type="button" id="cerrarRegistroMaestroBtn" class="cerrar-btn">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="modal-body">
+					<div class="registro-maestro-options">
+						<button class="btn-secondary" id="btnRegistroMaquina">Máquina</button>
+						<button class="btn-secondary" id="btnRegistroOrganismo">Organismo</button>
+						<button class="btn-secondary" id="btnRegistroProvincia">Provincia</button>
+						<button class="btn-secondary" id="btnRegistroCliente">Cliente</button>
+						<button class="btn-secondary" id="btnRegistroError">Error</button>
+						<button class="btn-secondary" id="btnRegistroPais">País</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal para registrar Países -->
+		<div id="modalRegistroPais" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2>Registrar País</h2>
+					<div class="header-actions">
+						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" id="cerrarRegistroPaisBtn" class="cerrar-btn">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<form id="formRegistroPais">
+					<div class="form-grid">
+						<div class="form-control">
+							<label for="inputPaisCodigo">Código (3) <label style="color: red; display: inline;">*</label></label>
+							<div class="form-row-inline">
+								<input type="text" id="inputPaisCodigo" name="codigo" maxlength="3" required>
+								<button type="button" class="btn-icon btn-search" title="Buscar País">
+									<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+										<circle cx="11" cy="11" r="8" />
+										<path d="M21 21l-4.35-4.35" />
+									</svg>
+								</button>
+							</div>
+						</div>
+						<div class="form-control">
+							<label for="inputPaisNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+							<input type="text" id="inputPaisNombre" name="nombre" maxlength="50" required>
+						</div>
+						<div class="form-control">
+							<label for="inputPaisLongitud">Longitud</label>
+							<input type="number" id="inputPaisLongitud" name="longitud" step="0.0000001">
+						</div>
+						<div class="form-control">
+							<label for="inputPaisLatitud">Latitud</label>
+							<input type="number" id="inputPaisLatitud" name="latitud" step="0.0000001">
+						</div>
+					</div>
+					<div class="search-nav-group">
+						<button type="button" class="btn-secondary btn-small btn-first"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-prev"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6" /></svg></button>
+						<span class="nav-count">Nuevo</span>
+						<button type="button" class="btn-secondary btn-small btn-next"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-last"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" /></svg></button>
+					</div>
+					<div class="botones botones-center">
+						<button type="button" class="btn-eliminar" style="display:none">Eliminar</button>
+						<button type="button" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
+						<button type="submit" class="btn-primary">Guardar País</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<!-- Modal para registrar Provincias -->
+		<div id="modalRegistroProvincia" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2>Registrar Provincia</h2>
+					<div class="header-actions">
+						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" id="cerrarRegistroProvinciaBtn" class="cerrar-btn">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<form id="formRegistroProvincia">
+					<div class="form-grid">
+						<div class="form-control">
+							<label for="inputProvinciaCodigo">Código (10) <label style="color: red; display: inline;">*</label></label>
+							<div class="form-row-inline">
+								<input type="text" id="inputProvinciaCodigo" name="codigo" maxlength="10" required>
+								<button type="button" class="btn-icon btn-search" title="Buscar Provincia">
+									<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+										<circle cx="11" cy="11" r="8" />
+										<path d="M21 21l-4.35-4.35" />
+									</svg>
+								</button>
+							</div>
+						</div>
+						<div class="form-control">
+							<label for="inputProvinciaNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+							<input type="text" id="inputProvinciaNombre" name="nombre" maxlength="50" required>
+						</div>
+						<div class="form-control">
+							<label for="inputProvinciaPais">País (3)</label>
+							<div class="form-row-inline">
+								<input type="text" id="inputProvinciaPais" name="pais" maxlength="3" class="w-5vw">
+								<button type="button" class="btn-icon sm-trigger" data-type="paises">
+									<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+										<circle cx="11" cy="11" r="8" />
+										<path d="M21 21l-4.35-4.35" />
+									</svg>
+								</button>
+								<span id="labelProvinciaPais" class="helper-name"></span>
+							</div>
+						</div>
+						<div class="form-control">
+							<label for="inputProvinciaLongitud">Longitud</label>
+							<input type="number" id="inputProvinciaLongitud" name="longitud" step="0.0000001">
+						</div>
+						<div class="form-control">
+							<label for="inputProvinciaLatitud">Latitud</label>
+							<input type="number" id="inputProvinciaLatitud" name="latitud" step="0.0000001">
+						</div>
+					</div>
+					<div class="search-nav-group">
+						<button type="button" class="btn-secondary btn-small btn-first"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-prev"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6" /></svg></button>
+						<span class="nav-count">Nuevo</span>
+						<button type="button" class="btn-secondary btn-small btn-next"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 18l6-6-6-6" /></svg></button>
+						<button type="button" class="btn-secondary btn-small btn-last"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M13 17l5-5-5-5M6 17l5-5-5-5" /></svg></button>
+					</div>
+					<div class="botones botones-center">
+						<button type="button" class="btn-eliminar" style="display:none">Eliminar</button>
+						<button type="button" class="btn-secondary btn-nuevo">Limpiar / Nuevo</button>
+						<button type="submit" class="btn-primary">Guardar Provincia</button>
+					</div>
+				</form>
 			</div>
 		</div>
 	</body>

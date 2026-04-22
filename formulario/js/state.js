@@ -1,12 +1,13 @@
 /**
  * Módulo: state.js
  */
+import { CONFIG } from './config.js';
 
 /**
- * Frecuencia de actualización automática en milisegundos (7.5 segundos).
+ * Frecuencia de actualización automática leída de la configuración.
  * @type {number}
  */
-export const INTERVALO_MS = 7500;
+export const INTERVALO_MS = CONFIG.REFRESH_INTERVAL_MS;
 
 /**
  * Objeto de estado global que centraliza los datos y la configuración de la aplicación.
@@ -35,7 +36,7 @@ export const INTERVALO_MS = 7500;
  * @property {boolean} animarTabla - Controla si se deben aplicar animaciones de entrada a las filas de la tabla.
  */
 export const appState = {
-	maxLineasPresentacion: 20,
+	maxLineasPresentacion: CONFIG.PRESENTATION.DEFAULT_MAX_LINES,
 	datosTabla: [],
 	columnasTabla: [],
 	estadoInterval: null,

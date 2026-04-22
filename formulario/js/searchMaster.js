@@ -2,6 +2,7 @@
  * Módulo: searchMaster.js
  * Gestiona el modal de búsqueda maestra (F2).
  */
+import { CONFIG } from './config.js';
 import * as dom from './dom.js';
 import { appState } from './state.js';
 
@@ -74,11 +75,15 @@ export function initSearchMaster() {
 	}
 
 	entidad.onchange = () => {
-		const isMaquina = entidad.value === 'maquinas';
+		const val = entidad.value;
+		const isMaquina = val === 'maquinas';
+		const isError = val === 'errores'; // New
+		const isPais = val === 'paises'; // New
 		const crit = document.getElementById("smCriterio");
-		// Ajustamos los índices tras el cambio de orden en el HTML
+		
 		crit.options[0].textContent = isMaquina ? "Número Serie" : "Código";
-		crit.options[1].textContent = isMaquina ? "Descripción" : "Nombre";
+		// If it's a machine or error, the 'name' field is 'Descripción', otherwise it's 'Nombre'
+		crit.options[1].textContent = (isMaquina || isError) ? "Descripción" : "Nombre"; 
 		input.value = ""; // Limpiar búsqueda al cambiar de entidad manualmente
 		loadCategoryData(entidad.value);
 	};
@@ -91,7 +96,7 @@ export function initSearchMaster() {
 		clearTimeout(searchTimeout);
 		searchTimeout = setTimeout(() => {
 			performSearch();
-		}, 250);
+		}, CONFIG.DEBOUNCE_MS);
 	};
 
 	// Botones navegación
@@ -139,7 +144,7 @@ async function loadCategoryData(type) {
 	if (state.cache[type]) {
 		state.data = state.cache[type];
 	} else {
-		const res = await fetch(`datos.php?modo=maestro&tipo=${type}`);
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=maestro&tipo=${type}`);
 		state.data = await res.json();
 		state.cache[type] = state.data;
 	}
@@ -165,6 +170,8 @@ function performSearch() {
 			else if (type === 'organismos') padded = val.padStart(4, '0');
 			else if (type === 'provincias') padded = val.padStart(2, '0');
 			else if (type === 'clientes') padded = val.padStart(5, '0');
+			else if (type === 'errores') padded = val.padStart(4, '0');
+			else if (type === 'paises') padded = val.padStart(3, '0');
 
 			state.filtered = state.data.filter(item => String(item.Codigo).includes(val));
 		} else {
@@ -239,6 +246,12 @@ function selectCurrent() {
 		// Para provincias, si el organismo no está seleccionado, podríamos tener problemas
 		// pero el buscador maestro permite búsqueda global.
 		dom.selectProvincia.value = res.Nombre;
+	}
+	else {
+		if (dom.searchInput) {
+			dom.searchInput.value = res.Nombre;
+			dom.searchInput.dispatchEvent(new Event('input'));
+		}
 	}
 
 	// Disparamos la búsqueda principal automáticamente

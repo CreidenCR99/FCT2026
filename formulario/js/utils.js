@@ -2,6 +2,7 @@
  * Módulo: utils.js
  * Funciones de utilidad pura y cálculos de estado para evitar dependencias circulares.
  */
+import { CONFIG } from './config.js';
 
 /**
  * Normaliza la comprobación de valores "falsos" o "nulos" que pueden venir de la base de datos como strings.
@@ -41,7 +42,7 @@ export function parseUltimoControl(valor) {
 export function getClaseConexion(fila) {
 	const fechaControl = parseUltimoControl(fila.UltimoControl);
 	if (!fechaControl || Number.isNaN(fechaControl.getTime())) return "estado-gris";
-	if ((new Date() - fechaControl) / 60000 < 10) return "estado-verde";
+	if ((new Date() - fechaControl) / 60000 < CONFIG.OFFLINE_THRESHOLD_MINUTES) return "estado-verde";
 	return "estado-rojo";
 }
 

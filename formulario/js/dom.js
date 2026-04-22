@@ -33,3 +33,88 @@ export const backToTopBtn         = document.getElementById("backToTop");       
 export const floatingLogo         = document.getElementById("floatingLogo");         // Logo flotante que aparece al hacer scroll
 export const registroMaquinasBtn  = document.getElementById("registroMaquinasBtn");  // Botón Maestro de Máquinas
 export const buscadorMaestroBtn   = document.getElementById("buscadorMaestroBtn");   // Botón Buscador Maestro (F2)
+
+// --- Elementos para el Maestro de Máquinas ---
+export const modalMaquinas        = document.getElementById("modalMaquinas");
+export const formMaquinasMaster   = document.getElementById("formMaquinasMaster");
+export const mmNS                 = document.getElementById("mmNS");
+export const mmDesc               = document.getElementById("mmDesc");
+export const mmTipo               = document.getElementById("mmTipo");
+export const mmNotas              = document.getElementById("mmNotas");
+export const mmOrg                = document.getElementById("mmOrg");
+export const mmCli                = document.getElementById("mmCli");
+export const mmProv               = document.getElementById("mmProv");
+export const mmMonEstado          = document.getElementById("mmMonEstado");
+export const mmMonAlerta          = document.getElementById("mmMonAlerta");
+export const mmActualizar         = document.getElementById("mmActualizar");
+export const mmActivo             = document.getElementById("mmActivo");
+export const mmOrgName            = document.getElementById("mmOrgName");
+export const mmCliName            = document.getElementById("mmCliName");
+export const mmProvName           = document.getElementById("mmProvName");
+
+// --- Elementos del DOM para el nuevo modal de selección de registro ---
+export const modalRegistroMaestro = document.getElementById("modalRegistroMaestro");
+export const cerrarRegistroMaestroBtn = document.getElementById("cerrarRegistroMaestroBtn");
+export const btnRegistroMaquina   = document.getElementById("btnRegistroMaquina");
+export const btnRegistroOrganismo = document.getElementById("btnRegistroOrganismo");
+export const btnRegistroProvincia = document.getElementById("btnRegistroProvincia");
+export const btnRegistroCliente   = document.getElementById("btnRegistroCliente");
+export const btnRegistroError     = document.getElementById("btnRegistroError");
+export const btnRegistroPais      = document.getElementById("btnRegistroPais");
+
+// --- Elementos del DOM para el modal de registro de Organismos ---
+export const modalRegistroOrganismo = document.getElementById("modalRegistroOrganismo");
+export const cerrarRegistroOrganismoBtn = document.getElementById("cerrarRegistroOrganismoBtn");
+export const formRegistroOrganismo = document.getElementById("formRegistroOrganismo");
+export const inputOrganismoCodigo = document.getElementById("inputOrganismoCodigo");
+export const inputOrganismoNombre = document.getElementById("inputOrganismoNombre");
+export const cancelarRegistroOrganismoBtn = document.getElementById("cancelarRegistroOrganismoBtn");
+
+// --- Elementos del DOM para el modal de registro de Clientes ---
+export const modalRegistroCliente = document.getElementById("modalRegistroCliente");
+export const cerrarRegistroClienteBtn = document.getElementById("cerrarRegistroClienteBtn");
+export const formRegistroCliente = document.getElementById("formRegistroCliente");
+export const inputClienteCodigo = document.getElementById("inputClienteCodigo");
+export const inputClienteNombre = document.getElementById("inputClienteNombre");
+export const cancelarRegistroClienteBtn = document.getElementById("cancelarRegistroClienteBtn");
+
+// --- Elementos del DOM para el modal de registro de Errores ---
+export const modalRegistroError = document.getElementById("modalRegistroError");
+export const cerrarRegistroErrorBtn = document.getElementById("cerrarRegistroErrorBtn");
+export const formRegistroError = document.getElementById("formRegistroError");
+export const inputErrorCodigo = document.getElementById("inputErrorCodigo");
+export const inputErrorNombre = document.getElementById("inputErrorNombre");
+export const cancelarRegistroErrorBtn = document.getElementById("cancelarRegistroErrorBtn");
+
+// --- Elementos del DOM para el modal de registro de Países ---
+export const modalRegistroPais = document.getElementById("modalRegistroPais");
+export const cerrarRegistroPaisBtn = document.getElementById("cerrarRegistroPaisBtn");
+export const formRegistroPais = document.getElementById("formRegistroPais");
+export const inputPaisCodigo = document.getElementById("inputPaisCodigo");
+export const inputPaisNombre = document.getElementById("inputPaisNombre");
+export const inputPaisLongitud = document.getElementById("inputPaisLongitud");
+export const inputPaisLatitud = document.getElementById("inputPaisLatitud");
+export const cancelarRegistroPaisBtn = document.getElementById("cancelarRegistroPaisBtn");
+
+// --- Elementos del DOM para el modal de registro de Provincias ---
+export const modalRegistroProvincia = document.getElementById("modalRegistroProvincia");
+export const cerrarRegistroProvinciaBtn = document.getElementById("cerrarRegistroProvinciaBtn");
+export const formRegistroProvincia = document.getElementById("formRegistroProvincia");
+export const inputProvinciaCodigo = document.getElementById("inputProvinciaCodigo");
+export const inputProvinciaNombre = document.getElementById("inputProvinciaNombre");
+export const inputProvinciaPais = document.getElementById("inputProvinciaPais");
+export const labelProvinciaPais = document.getElementById("labelProvinciaPais");
+export const inputProvinciaLongitud = document.getElementById("inputProvinciaLongitud");
+export const inputProvinciaLatitud = document.getElementById("inputProvinciaLatitud");
+export const cancelarRegistroProvinciaBtn = document.getElementById("cancelarRegistroProvinciaBtn");
+
+// --- Elementos para el Maestro de Máquinas (Navegación) ---
+export const mmBtnFirst    = document.getElementById("mmBtnFirst");
+export const mmBtnPrev     = document.getElementById("mmBtnPrev");
+export const mmBtnNext     = document.getElementById("mmBtnNext");
+export const mmBtnLast     = document.getElementById("mmBtnLast");
+export const mmBtnNuevo    = document.getElementById("mmBtnNuevo");
+export const mmBtnEliminar = document.getElementById("mmBtnEliminar");
+export const mmBtnBack     = document.getElementById("mmBtnBack");
+export const mmCount       = document.getElementById("mmCount");
+export const mmModalFooter = document.querySelector("#modalMaquinas .modal-footer-nav");

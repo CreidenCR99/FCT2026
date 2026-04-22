@@ -2,7 +2,8 @@
  * Módulo: ui.js
  * Controla los elementos visuales de la interfaz, temporizadores y skeletons.
  */
-import { appState, CONFIG } from './state.js';
+import { appState } from './state.js';
+import { CONFIG } from './config.js';
 
 /**
  * Inyecta estados de carga (skeletons) en los contenedores de texto.

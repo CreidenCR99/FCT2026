@@ -1,6 +1,7 @@
 /**
  * Módulo: api.js
  */
+import { CONFIG } from './config.js';
 import { appState } from './state.js';
 import * as dom from './dom.js';
 import { renderKPIs, renderLogsNormal, mostrarSkeleton, actualizarDatosModal, limpiarTrends } from './ui.js';
@@ -43,7 +44,7 @@ export function actualizarVisibilidadLimpiar() {
  */
 export async function cargarOrganismos() {
 	try {
-		const res = await fetch("datos.php?modo=organismos");
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=organismos`);
 		const data = await res.json();
 		dom.selectOrganismo.innerHTML = `<option value="">Todos los organismos</option>`;
 		data.forEach(item => {
@@ -70,7 +71,7 @@ export async function cargarOrganismos() {
  */
 export async function cargarProvincias(organismo = "") {
 	try {
-		const res = await fetch(`datos.php?modo=provincias&organismo=${encodeURIComponent(organismo)}`);
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=provincias&organismo=${encodeURIComponent(organismo)}`);
 		const data = await res.json();
 		const valorActual = dom.selectProvincia.value;
 		dom.selectProvincia.innerHTML = `<option value="">Todas las provincias</option>`;
@@ -97,7 +98,7 @@ export async function cargarProvincias(organismo = "") {
  */
 export async function cargarErrores() {
 	try {
-		const res = await fetch("datos.php?modo=errores");
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=errores`);
 		const data = await res.json();
 		const select = document.getElementById("modalCodigoErrorSelect");
 		if (!select) return;
@@ -151,7 +152,7 @@ export async function fetchAndRenderData() {
 	try {
 		// Realizamos la llamada al backend con los filtros actuales de estado
 		const res = await fetch(
-			`datos.php?modo=maquinas&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`, {
+			`${CONFIG.API_ENDPOINT}?modo=maquinas&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`, {
 				signal: appState.currentController.signal
 			}
 		);
@@ -201,7 +202,18 @@ export async function fetchAndRenderData() {
 		}
 
 		// Validación de seguridad: Si el backend devuelve un objeto de error en lugar de un array
-		if (!Array.isArray(data)) throw new Error(data.error || "La respuesta del servidor no es un listado válido.");
+		if (!Array.isArray(data)) {
+			let errorDetail = data.error;
+			if (Array.isArray(errorDetail)) {
+				// Extraemos los mensajes de error de la estructura de sqlsrv_errors()
+				errorDetail = errorDetail.map(e => e.message || JSON.stringify(e)).join(" | ");
+			} else if (typeof errorDetail === 'object' && errorDetail !== null) {
+				errorDetail = JSON.stringify(errorDetail);
+			}
+			
+			const msg = errorDetail || "La respuesta del servidor no es un listado válido.";
+			throw new Error(msg);
+		}
 
 		// Identificamos el estado de cada máquina para comparar cambios
 		const nuevosEstados = {};

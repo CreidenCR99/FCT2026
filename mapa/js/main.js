@@ -2,7 +2,8 @@
  * Módulo: main.js
  * Orquestador principal de la aplicación de monitoreo.
  */
-import { appState, CONFIG } from './state.js';
+import { appState } from './state.js';
+import { CONFIG, MAPAS } from './config.js';
 import { cargarPaises, actualizarDatos } from './api.js';
 import { mostrarSkeleton, aplicarFiltroHorario, actualizarTimers } from './ui.js';
 import { navegarPais, togglePausa, enfocarPais } from './navigation.js';
@@ -42,8 +43,8 @@ async function init() {
   }).setView([28.4, -16.2], 6);
 
   // Definimos las capas base para ambos mapas
-  const baseTiles = L.tileLayer(CONFIG.MAP_TILES, { attribution: CONFIG.ATTRIBUTION, className: "dark-tiles", ext: 'png' });
-  const insetTiles = L.tileLayer(CONFIG.MAP_TILES, { className: "dark-tiles", ext: 'png' });
+  const baseTiles = L.tileLayer(MAPAS.MAP_TILES, { attribution: MAPAS.ATTRIBUTION, className: "dark-tiles", ext: 'png' });
+  const insetTiles = L.tileLayer(MAPAS.MAP_TILES, { className: "dark-tiles", ext: 'png' });
 
   /**
    * Sincronización de carga: Esperamos a que ambos mapas (principal e inset) hayan descargado sus teselas iniciales.
@@ -60,8 +61,8 @@ async function init() {
   ]);
 
   baseTiles.addTo(appState.map);
-  L.tileLayer(CONFIG.TERRAIN_LINES, { minZoom: 5, maxZoom: 6.9, ext: 'png' }).addTo(appState.map);
-  L.tileLayer(CONFIG.TERRAIN_LINES, { minZoom: 7.1, maxZoom: 20, ext: 'png' }).addTo(appState.map);
+  L.tileLayer(MAPAS.TERRAIN_LINES, { minZoom: 5, maxZoom: 6.9, ext: 'png' }).addTo(appState.map);
+  L.tileLayer(MAPAS.TERRAIN_LINES, { minZoom: 7.1, maxZoom: 20, ext: 'png' }).addTo(appState.map);
   insetTiles.addTo(appState.insetMap);
 
   mostrarSkeleton();
@@ -87,11 +88,12 @@ async function init() {
 
   // --- Lógica de Inactividad del Mapa ---
   const resetInactivityTimer = () => {
-    if (appState.isProgrammaticMove) return; // No resetear si el mapa se mueve por la rotación automática
+    // No resetear si el mapa se mueve por la rotación automática o INACTIVO es -1
+    if (appState.isProgrammaticMove || CONFIG.INACTIVO == -1) return;
     clearTimeout(appState.inactivityTimeout);
     appState.inactivityTimeout = setTimeout(() => {
       enfocarPais(appState.paises[appState.paisActualIdx]);
-    }, 30000); // 30 segundos
+    }, CONFIG.INACTIVO); // 30 segundos
   };
 
   appState.map.on('movestart zoomstart', resetInactivityTimer);

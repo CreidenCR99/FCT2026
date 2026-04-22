@@ -1,6 +1,7 @@
 /**
  * Módulo: table.js
  */
+import { CONFIG } from './config.js';
 import { appState } from './state.js';
 import * as dom from './dom.js';
 import { esFalso, getEstadoControl } from './utils.js';
@@ -17,7 +18,7 @@ dom.searchInput.addEventListener("input", () => {
 		appState.animarTabla = true; 
 		if (appState.datosTabla.length > 0) renderTabla();
 		appState.animarTabla = false;
-	}, 250); // 250ms de pausa antes de filtrar
+	}, CONFIG.DEBOUNCE_MS); // Pausa antes de filtrar
 });
 
 
@@ -120,9 +121,9 @@ export function renderTabla(maquinasCambiadas = new Set()) {
 		const rowTitle = estado.clase === "estado-naranja" ? 'Click para gestionar error' : 'Click para registrar nuevo error';
 
 		// Animamos solo si es una búsqueda activa y estamos en el rango inicial
-		const isAnimated = appState.animarTabla && idx < 50;
+		const isAnimated = appState.animarTabla && idx < CONFIG.UI.TABLE_ANIMATION_LIMIT;
 		const cascadeClass = isAnimated ? " row-cascade" : (appState.animarTabla ? " row-delayed" : "");
-		const cascadeStyle = isAnimated ? ` animation-delay: ${(idx * 0.03).toFixed(2)}s;` : "";
+		const cascadeStyle = isAnimated ? ` animation-delay: ${(idx * CONFIG.UI.TABLE_ANIMATION_DELAY_STEP).toFixed(2)}s;` : "";
 
 		htmlBuffer += `
         <tr class="row-${colorSuffix}${esCambio}${cascadeClass}" title="${rowTitle}" style="cursor:pointer;${cascadeStyle}" data-ns="${fila.NumeroSerie}">

@@ -1,14 +1,18 @@
 /**
  * Módulo: api.js
- * Capa de abstracción para la comunicación con el backend (datos.php).
+ * Capa de abstracción para la comunicación con el backend de geolocalización.
  */
-import { appState, CONFIG } from './state.js';
+import { appState } from './state.js';
+import { CONFIG } from './config.js';
 import { aplicarFiltroHorario, actualizarStatsUI, sincronizarLeyenda } from './ui.js';
 import { syncAlerts } from './notifications.js';
 import { getCache, setCache } from './db.js';
 
 // --- Inicialización del Worker ---
 
+/** 
+ * Trabajador en segundo plano para procesar datos pesados sin bloquear el hilo de UI.
+ */
 const apiWorker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
 
 /** 
@@ -18,6 +22,7 @@ const API_BASE_URL = new URL('../', import.meta.url).href;
 
 /**
  * Gestor de promesas para sincronizar el Worker con las llamadas await del hilo principal.
+ * @type {Map<string, Function>}
  */
 const pendingRequests = new Map();
 
@@ -39,6 +44,7 @@ apiWorker.onmessage = (e) => {
       appState.paises = data;
       setCache('paises', data);
     } else if (mode === 'mapa_data') {
+      // Actualización masiva de estado global tras recibir datos de puntos
       appState.provincias = provincias;
       setCache('mapa_data', { provincias, alertas });
 
@@ -53,7 +59,7 @@ apiWorker.onmessage = (e) => {
 /**
  * Solicita al servidor el catálogo de países habilitados para la rotación.
  * @async
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resuelve cuando los países se han cargado en el estado.
  */
 export async function cargarPaises() {
   // Intentar recuperación desde caché para carga instantánea
@@ -62,7 +68,7 @@ export async function cargarPaises() {
 
   return new Promise((resolve) => {
     pendingRequests.set('paises', resolve);
-    apiWorker.postMessage({ mode: 'paises', url: `${API_BASE_URL}datos.php?modo=paises` });
+    apiWorker.postMessage({ mode: 'paises', url: `${API_BASE_URL}${CONFIG.API_ENDPOINT}?modo=paises` });
     
     if (cached) resolve(); // Resolvemos de inmediato si tenemos caché
   });
@@ -72,7 +78,7 @@ export async function cargarPaises() {
  * Sincroniza el estado del mapa con el servidor. 
  * Actualiza provincias, detecta nuevos fallos y renderiza los marcadores.
  * @async
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resuelve tras la petición o recuperación de caché.
  */
 export async function actualizarDatos() {
   // Recuperar datos previos de provincias para pintar el mapa al instante
@@ -109,7 +115,7 @@ export async function actualizarDatos() {
     pendingRequests.set('mapa_data', resolve);
     apiWorker.postMessage({
       mode: 'mapa_data',
-      url: `${API_BASE_URL}datos.php?modo=mapa_data`,
+      url: `${API_BASE_URL}${CONFIG.API_ENDPOINT}?modo=mapa_data`,
       payload: { lastAlerts: appState.lastAlerts }
     });
 
@@ -141,6 +147,7 @@ function renderizarPuntosMapa() {
 
     ["verde", "rojo", "naranja"].forEach((status) => {
       const count = prov.counts[status];
+      // Ignoramos estados sin máquinas
       if (count <= 0) return;
       hasData = true;
       iconHTML += `<div class="mini-dot dot-${status}" style="animation-delay: ${syncDelay}s">${count}</div>`;

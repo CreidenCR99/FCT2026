@@ -3,16 +3,26 @@
  * Gestiona el sistema de colas y el renderizado de notificaciones de fallo.
  */
 import { appState } from './state.js';
+import { CONFIG } from './config.js';
 import { getCache } from './db.js';
 
 let swiperInstance = null;
-let stickyTimeout = null;
-const alertTimestamps = new Map(); // Seguimiento de tiempo por Número de Serie
-const RECENT_THRESHOLD = 3 * 60 * 1000; // 3 minutos en ms
+let stickyTimeout = null; // Usado para gestionar el timeout de alertas "pegajosas" (no implementado en este contexto)
+
+/** @type {AudioContext|null} Contexto de audio para síntesis de sonidos. */
+let audioCtx = null;
+
+/** 
+ * Mapa para rastrear cuándo se vio por primera vez una alerta (SN -> timestamp).
+ * Permite gestionar efectos visuales de "novedad".
+ * @type {Map<string, number>} 
+ */
+const alertTimestamps = new Map(); 
 let lastAlertsHash = "";
 
 /**
  * Inicializa el carrusel de alertas.
+ * Intenta recuperar el estado previo de IndexedDB para evitar parpadeos en la carga.
  */
 async function initAlertSystem() {
   // 1. Cargar desde caché para saber qué alertas ya existían
@@ -24,10 +34,44 @@ async function initAlertSystem() {
 }
 
 /**
+ * Genera un sonido sintético basado en la configuración.
+ * @param {string} status - 'rojo' o 'naranja'
+ */
+function playNotificationSound(status) {
+  try {
+    // El contexto de audio debe crearse/reanudarse tras una interacción del usuario
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const cfg = status === 'rojo' ? CONFIG.SOUNDS.TYPES.ROJO : CONFIG.SOUNDS.TYPES.NARANJA;
+    
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = cfg.type;
+    oscillator.frequency.setValueAtTime(cfg.freq, audioCtx.currentTime);
+    
+    gainNode.gain.setValueAtTime(CONFIG.SOUNDS.VOLUME, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + cfg.duration);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + cfg.duration);
+  } catch (e) {
+    console.warn("Web Audio API not supported or blocked:", e);
+  }
+}
+
+/**
  * Sincroniza las alertas del servidor con el carrusel local.
- * @param {Array} serverAlerts - Lista de alertas actuales del backend.
+ * @param {Array<Object>} serverAlerts - Lista de alertas actuales provenientes del backend.
  */
 export function syncAlerts(serverAlerts) {
+  // Capturamos las alertas activas del ciclo anterior para detectar las "nuevas"
+  const previousActiveSns = new Set(appState.activeAlerts.map(a => a.sn));
+
   // 1. Agrupamiento y Ordenación: Errores (naranja) por Código -> Alertas (rojo) por Provincia
   const sortedAlerts = serverAlerts.sort((a, b) => {
     if (a.status !== b.status) {
@@ -49,10 +93,16 @@ export function syncAlerts(serverAlerts) {
       alertTimestamps.set(alert.sn, now);
     }
     const firstSeen = alertTimestamps.get(alert.sn);
-    const isRecent = (now - firstSeen) < RECENT_THRESHOLD;
+    const isRecent = (now - firstSeen) < CONFIG.NOTIFICATIONS.RECENT_THRESHOLD_MS;
     return { ...alert, isRecent };
   });
 
+  // Reproducir sonidos para alertas que aparecen por primera vez en esta actualización
+  processedAlerts.forEach(alert => {
+    if (!previousActiveSns.has(alert.sn)) { // Si esta alerta no estaba activa en el ciclo anterior
+      playNotificationSound(alert.status);
+    }
+  });
   // Limpieza del mapa de tiempos para alertas que ya no existen
   for (const sn of alertTimestamps.keys()) {
     if (!currentSns.has(sn)) alertTimestamps.delete(sn);
@@ -67,6 +117,7 @@ export function syncAlerts(serverAlerts) {
 
 /**
  * Inicializa la instancia de Swiper para el carrusel.
+ * Configura el modo ticker continuo y gestiona el loop manual infinito.
  * @returns {void}
  */
 export function iniciarCarrusel() {
@@ -76,14 +127,24 @@ export function iniciarCarrusel() {
     direction: 'vertical',
     slidesPerView: 'auto',
     spaceBetween: 8,
-    loop: true, 
-    speed: 1500, // Velocidad muy lenta para movimiento continuo
+    loop: false, 
+    speed: CONFIG.VELOCIDAD_CARRUSEL, // Velocidad muy lenta para movimiento continuo
     autoplay: {
       delay: 0, // Movimiento sin pausas
       disableOnInteraction: false,
     },
-    allowTouchMove: false, // Desactivado para ticker continuo más estable
-    grabCursor: false
+    allowTouchMove: true,
+    on: {
+      // Lógica de teletransporte para Swiper: cuando llegamos al final del buffer, volvemos al inicio.
+      slideChange: function () {
+        // Si llegamos al inicio del bloque duplicado (buffer de 7), teletransportamos al inicio
+        if (appState.activeAlerts.length > 0 && this.activeIndex >= appState.activeAlerts.length) {
+          this.slideTo(0, 0);
+          this.autoplay.start();
+        }
+      }
+    },
+    grabCursor: true
   });
 
   // Forzar CSS lineal para el efecto ticker continuo
@@ -103,6 +164,7 @@ export function iniciarCarrusel() {
 
 /**
  * Renderiza las alertas visibles basadas en el espacio disponible.
+ * Utiliza morphdom para una actualización eficiente sin interrumpir la animación de Swiper.
  */
 export function renderCarousel() {
   const feed = document.getElementById("failure-feed");
@@ -137,21 +199,41 @@ export function renderCarousel() {
   feed.style.top = `${topLimit}px`;
   feed.style.height = `${bottomLimit - topLimit}px`;
 
-  // Evitar re-renderizado costoso si los datos no han cambiado
+  /**
+   * Función auxiliar para garantizar que el movimiento continúe sin saltos.
+   * Reinicia el motor de autoplay de Swiper y asegura el timing lineal.
+   */
+  const restartContinuousMotion = () => {
+    if (swiperInstance && appState.notificationsVisible) {
+      swiperInstance.autoplay.stop();
+      swiperInstance.autoplay.start();
+      if (swiperInstance.wrapperEl) {
+        swiperInstance.wrapperEl.style.transitionTimingFunction = 'linear';
+      }
+    }
+  };
+
+  // Optimización: Si el contenido es idéntico al anterior, solo nos aseguramos de que el motor siga corriendo.
   const currentHash = JSON.stringify(appState.activeAlerts);
   if (currentHash === lastAlertsHash) {
-    if (swiperInstance) swiperInstance.update();
+    restartContinuousMotion();
     return;
   }
   lastAlertsHash = currentHash;
 
   // NOTA: La combinación de Swiper Loop + Morphdom es compleja porque Swiper genera clones 
-  // que Morphdom no conoce. Para evitar que el carrusel "salte" al principio en actualizaciones 
-  // de fondo, capturamos la posición actual y la restauramos si no hay novedades.
+  // que Morphdom no conoce. Detenemos el autoplay antes de manipular el DOM.
+  if (swiperInstance) swiperInstance.autoplay.stop();
   const currentTranslate = swiperInstance ? swiperInstance.getTranslate() : 0;
 
-  // 2. Generar el HTML de los slides
-  const html = appState.activeAlerts.map(alerta => `
+  // 2. Generar el HTML: Lista real + buffer de los 7 primeros para el efecto ticker
+  const alertsToRender = [...appState.activeAlerts];
+  if (alertsToRender.length > 0) {
+    // Añadimos los 7 primeros al final para que el salto sea invisible
+    alertsToRender.push(...appState.activeAlerts.slice(0, 7));
+  }
+
+  const html = alertsToRender.map(alerta => `
     <div class="swiper-slide fail-note status-${alerta.status} ${alerta.isRecent ? 'recent-alert-glow' : ''}">
       <div class="fail-content">
         <strong>${alerta.status === "rojo" ? "CONEXIÓN" : "ERROR"}:</strong> ${alerta.nombre}
@@ -163,9 +245,6 @@ export function renderCarousel() {
   // 3. Usar morphdom para actualizar solo lo necesario sin romper Swiper
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-
-  // Si hay loop, debemos destruirlo temporalmente para que morphdom no borre los duplicados de Swiper
-  if (swiperInstance && swiperInstance.params.loop) swiperInstance.loopDestroy();
 
   window.morphdom(wrapper, tempDiv, {
     childrenOnly: true,
@@ -185,17 +264,13 @@ export function renderCarousel() {
 
   // 4. Actualizar Swiper y reiniciar Autoplay si no hay novedades fijadas
   if (swiperInstance) {
-    if (swiperInstance.params.loop) swiperInstance.loopCreate();
     swiperInstance.update();
     
     // Restauramos siempre la posición para que el movimiento sea infinito y sin saltos
     swiperInstance.setTranslate(currentTranslate);
-    if (appState.notificationsVisible && !swiperInstance.autoplay.running) {
-      swiperInstance.autoplay.start();
-    }
-    if (swiperInstance.wrapperEl) {
-      swiperInstance.wrapperEl.style.transitionTimingFunction = 'linear';
-    }
+
+    // Forzamos el reinicio tras un breve delay para que el DOM se asiente
+    setTimeout(restartContinuousMotion, 50);
   }
 }
 

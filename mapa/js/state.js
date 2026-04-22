@@ -1,36 +1,7 @@
 /**
  * Módulo: state.js
- * Centraliza la configuración estática y el estado dinámico de la aplicación.
+ * Maneja el estado dinámico de la aplicación.
  */
-
-/**
- * Constantes de configuración y tiempos de ejecución.
- * @type {Object}
- */
-export const CONFIG = {
-  MS_DATOS: 7500,
-  MS_ROTACION: 300000,
-  MAP_TILES: "https://tiles.stadiamaps.com/tiles/stamen_terrain_background/{z}/{x}/{y}{r}.{ext}",
-  TERRAIN_LINES: "https://tiles.stadiamaps.com/tiles/stamen_terrain_lines/{z}/{x}/{y}{r}.{ext}",
-  ATTRIBUTION: '&copy; <a href="https://www.sicolares.com/" target="_blank">SicoLares</a> &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  ZOOM_DEFAULT: 6.5,
-  ZOOM_PAISES: {
-    'españa': 6.7,
-    'colombia': 6.5
-  }
-};
-
-/**
- * Configuración de regiones lejanas por país para el mapa secundario (inset).
- * @type {Object}
- */
-export const INSET_VIEWS = {
-  "españa": { center: [28.4, -16.2], zoom: 6, label: "Canarias" }
-  /* 
-  "portugal": { center: [32.7, -17.0], zoom: 7, label: "Madeira / Azores" },
-  "francia": { center: [14.6, -61.0], zoom: 7, label: "Antillas" },
-  */
-};
 
 /**
  * @namespace

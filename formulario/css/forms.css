@@ -134,3 +134,10 @@ select#organismo,
 select#provincia {
   border-color: var(--text-muted) !important;
 }
+
+.helper-name { 
+  font-size: 0.85em; 
+  color: var(--primary); 
+  font-weight: 600; 
+  margin-left: 8px; 
+}

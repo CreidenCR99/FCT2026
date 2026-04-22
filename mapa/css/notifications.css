@@ -5,7 +5,8 @@
 
 #failure-feed {
     position: fixed;
-    left: 1vh;
+    left: 1.1vh;
+    height: 1px;
     width: 20vw;
     z-index: 1000;
     overflow: hidden;
@@ -29,6 +30,7 @@
     font-size: 1.4vh;
     backdrop-filter: blur(15px);
     background: rgba(255,255,255,0.05);
+    animation: alertIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .new-alert-glow {

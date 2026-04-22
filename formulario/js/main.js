@@ -9,7 +9,7 @@ import { mostrarSkeleton } from './ui.js';
 import './theme.js';
 import './table.js';
 import { initSearchMaster } from './searchMaster.js';
-import { initMachineMaster } from './machineMaster.js';
+import { initAllMaestros } from './entityMaster.js';
 
 // --- visibilitychange ---
 
@@ -61,7 +61,7 @@ dom.form.addEventListener("submit", async (event) => {
 cargarOrganismos(); // Carga inicial de organismos en el selector
 cargarProvincias(); // Carga inicial de provincias en el selector
 initSearchMaster(); // Inicializar Maestro de Búsqueda (F2)
-initMachineMaster(); // Inicializar Maestro de Máquinas
+initAllMaestros(); // Inicializar Sistema Unificado de Maestros
 
 // Ejecutar búsqueda inicial sin filtros para mostrar todas las máquinas al cargar la aplicación
 //dom.form.dispatchEvent(new Event('submit'));

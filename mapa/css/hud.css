@@ -24,10 +24,14 @@
     position: fixed;
     bottom: 3vh;
     right: 1vh;
-    background: white;
-    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1vh;
     border-radius: 2vh;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     z-index: 24000;
 }
 #logo-container img { height: 50px; display: block; }

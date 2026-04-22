@@ -1,6 +1,7 @@
 /**
  * Módulo: presentation.js
  */
+import { CONFIG } from './config.js';
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { renderTabla } from './table.js';
@@ -19,7 +20,7 @@ import { fetchAndRenderData } from './api.js';
 export function calcularMaxLineas() {
 	// Si no estamos en modo presentación, no es necesario un cálculo preciso.
 	if (!appState.modoPresentacion) {
-		appState.maxLineasPresentacion = 20;
+		appState.maxLineasPresentacion = CONFIG.PRESENTATION.DEFAULT_MAX_LINES;
 		return;
 	}
 
@@ -44,12 +45,12 @@ export function calcularMaxLineas() {
 	const tieneErrores = obtenerErroresActivos(appState.datosTabla).length > 0;
 	const heightFooter = tieneErrores ? (window.innerHeight * 0.25) : 0; // El footer ocupa ~25vh (base + padding + margen)
 
-	const marginSafety = 30; // Margen de seguridad para evitar desbordamientos por tipos de línea más altos
+	const marginSafety = CONFIG.PRESENTATION.SAFETY_MARGIN_PX; // Margen de seguridad para evitar desbordamientos por tipos de línea más altos
 	const availableHeight = window.innerHeight - heightKpi - heightHeader - heightProgress - heightFooter - marginSafety;
 
 	// 3. Calculamos cuántas líneas caben físicamente y aplicamos un límite mínimo lógico.
 	const calculo = Math.floor(availableHeight / hLinea);
-	appState.maxLineasPresentacion = Math.max(24, calculo);
+	appState.maxLineasPresentacion = Math.max(CONFIG.PRESENTATION.MIN_LINES_LIMIT, calculo);
 }
 
 
@@ -65,7 +66,7 @@ window.addEventListener("resize", () => {
 			if (appState.paginaPresentacionActual >= appState.paginasPresentacion.length) appState.paginaPresentacionActual = 0;
 			renderPresentacion();
 		}
-	}, 200);
+	}, CONFIG.RESIZE_DEBOUNCE_MS);
 });
 
 
@@ -219,7 +220,7 @@ export function renderPresentacion() {
 
 	const todosErrores = obtenerErroresActivos(appState.datosTabla);
 
-	const ERR_POR_PAGINA = 8;
+	const ERR_POR_PAGINA = CONFIG.PRESENTATION.ERRORS_PER_PAGE;
 	const paginasErr = Math.ceil(todosErrores.length / ERR_POR_PAGINA) || 1;
 	const errIdx = appState.paginaPresentacionActual % paginasErr;
 	const errPagina = todosErrores.slice(errIdx * ERR_POR_PAGINA, (errIdx + 1) * ERR_POR_PAGINA);

@@ -37,3 +37,7 @@
   background: var(--primary-hover);
   transform: translateY(-0.5vh);
 }
+
+.w-5vw {
+  width: 5vw !important;
+}

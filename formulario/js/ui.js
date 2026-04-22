@@ -1,11 +1,14 @@
 /**
  * Módulo: ui.js
  */
+import { CONFIG } from './config.js';
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { getEstadoControl, esFalso, getClaseConexion, parseUltimoControl, escapeHtml, formatTimeStamp, obtenerErroresActivos } from './utils.js';
 import { fetchAndRenderData, cargarErrores } from './api.js';
 import { calcularMaxLineas, construirPaginasPresentacion, renderPresentacion, salirModoPresentation } from './presentation.js';
+import { openSearchMasterExternally } from './searchMaster.js';
+import { maestros } from './entityMaster.js';
 
 // ---- Skeleton ----
 
@@ -530,7 +533,7 @@ document.addEventListener("keydown", (e) => {
 
 window.addEventListener("scroll", () => {
 	// Mostrar logo y botón volver arriba si no estamos en modo presentación y hemos bajado suficiente
-	const show = !appState.modoPresentacion && window.scrollY > 200;
+	const show = !appState.modoPresentacion && window.scrollY > CONFIG.UI.BACK_TO_TOP_THRESHOLD_PX;
 	if (show) {
 		dom.backToTopBtn.classList.add("visible");
 		dom.floatingLogo.classList.add("visible");
@@ -611,7 +614,7 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 
 	try {
 		btnSubmit.disabled = true;
-		const res = await fetch(`datos.php?modo=${modo}`, {
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=${modo}`, {
 			method: "POST",
 			body: formData
 		});
