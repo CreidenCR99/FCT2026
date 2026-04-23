@@ -5,6 +5,7 @@
 // --- Elementos del DOM ---
 
 export const form                 = document.getElementById("form");                 // Formulario principal de búsqueda y filtros
+export const selectPais           = document.getElementById("pais");                 // Selector desplegable para filtrar por País
 export const selectOrganismo      = document.getElementById("organismo");            // Selector desplegable para filtrar por Organismo
 export const selectProvincia      = document.getElementById("provincia");            // Selector desplegable para filtrar por Provincia
 export const tablaSection         = document.getElementById("tablaSection");         // Sección contenedora de la tabla y resultados
@@ -46,6 +47,7 @@ export const mmCli                = document.getElementById("mmCli");
 export const mmProv               = document.getElementById("mmProv");
 export const mmMonEstado          = document.getElementById("mmMonEstado");
 export const mmMonAlerta          = document.getElementById("mmMonAlerta");
+export const mmUltControl         = document.getElementById("mmUltControl");         // Campo de última conexión (Solo lectura)
 export const mmActualizar         = document.getElementById("mmActualizar");
 export const mmActivo             = document.getElementById("mmActivo");
 export const mmOrgName            = document.getElementById("mmOrgName");

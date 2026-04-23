@@ -28,6 +28,12 @@
 				</div>
 				<div class="form-grid">
 					<div class="form-control">
+						<label for="pais">Pais</label>
+						<select id="pais" name="pais">
+							<option value="">Todos los países</option>
+						</select>
+					</div>
+					<div class="form-control">
 						<label for="organismo">Organismo</label>
 						<select id="organismo" name="organismo">
 							<option value="">Todos los organismos</option>
@@ -117,9 +123,9 @@
 							</button>
 						</div>
 					</div>
-					<form id="formMaquinasMaster">
-						<div class="form-grid">
-							<div class="form-control">
+			<form id="formMaquinasMaster">
+				<div class="form-grid form-grid-maquinas">
+					<div class="form-control col-half">
 								<label>Número de Serie <label style="color: red; display: inline;">*</label>
 								</label>
 								<div class="form-row-inline">
@@ -132,12 +138,12 @@
 									</button>
 								</div>
 							</div>
-							<div class="form-control">
+					<div class="form-control col-half">
 								<label>Descripción <label style="color: red; display: inline;">*</label>
 								</label>
 								<input type="text" name="descripcion" id="mmDesc" maxlength="50" required>
 							</div>
-							<div class="form-control">
+					<div class="form-control col-half">
 								<label>Tipo de Máquina <label style="color: red; display: inline;">*</label>
 								</label>
 								<select name="tipo" id="mmTipo" required>
@@ -152,66 +158,60 @@
 									<option value="TABS">TABS - Tunel ABS</option>
 								</select>
 							</div>
-							<div class="form-control">
+					<div class="form-control col-half">
 								<label>Notas</label>
 								<input type="text" name="notas" id="mmNotas" maxlength="50">
 							</div>
-						</div>
-						<div class="form-grid" style="margin-top: 2vh;">
-							<div class="form-control">
+
+							<!-- Organismo | Actualizar -->
+					<div class="form-control col-wide">
 								<label>Organismo (4) <label style="color: red; display: inline;">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="organismo" id="mmOrg" maxlength="4" style="width: 6vw;" required>
-									<button type="button" class="btn-icon sm-trigger" data-type="organismos">
-										<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-											<circle cx="11" cy="11" r="8" />
-											<path d="M21 21l-4.35-4.35" />
-										</svg>
-									</button>
+									<button type="button" class="btn-icon sm-trigger" data-type="organismos"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg></button>
 									<span id="mmOrgName" class="helper-name"></span>
 								</div>
 							</div>
-							<div class="form-control">
+					<div class="form-control col-narrow" style="display: flex; align-items: flex-end; justify-content: flex-end; padding-bottom: 0.5vh;">
+								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0; display: flex; align-items: center; gap: 0.5vw;"> Actualizar datos <input type="checkbox" name="actualizar" id="mmActualizar"></label>
+							</div>
+
+							<!-- Cliente | Monitorizar Estado -->
+					<div class="form-control col-wide">
 								<label>Cliente (5) <label style="color: red; display: inline;">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="cliente" id="mmCli" maxlength="5" style="width: 6vw;" required>
-									<button type="button" class="btn-icon sm-trigger" data-type="clientes">
-										<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-											<circle cx="11" cy="11" r="8" />
-											<path d="M21 21l-4.35-4.35" />
-										</svg>
-									</button>
+									<button type="button" class="btn-icon sm-trigger" data-type="clientes"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg></button>
 									<span id="mmCliName" class="helper-name"></span>
 								</div>
 							</div>
-							<div class="form-control">
+					<div class="form-control col-narrow" style="display: flex; align-items: flex-end; justify-content: flex-end; padding-bottom: 0.5vh;">
+								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0; display: flex; align-items: center; gap: 0.5vw;"> Monitorizar Estado <input type="checkbox" name="mon_estado" id="mmMonEstado"></label>
+							</div>
+
+							<!-- Provincia | Monitorizar Alertas -->
+					<div class="form-control col-wide">
 								<label>Provincia (2) <label style="color: red; display: inline;">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="provincia" id="mmProv" maxlength="2" style="width: 6vw;" required>
-									<button type="button" class="btn-icon sm-trigger" data-type="provincias">
-										<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-											<circle cx="11" cy="11" r="8" />
-											<path d="M21 21l-4.35-4.35" />
-										</svg>
-									</button>
+									<button type="button" class="btn-icon sm-trigger" data-type="provincias"><svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg></button>
 									<span id="mmProvName" class="helper-name"></span>
 								</div>
 							</div>
-							<div class="form-control" style="display: flex; flex-direction: column; justify-content: flex-end; gap: 0.2vh; padding-bottom: 0.5vh;">
-								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Actualizar datos <input type="checkbox" name="actualizar" id="mmActualizar">
-								</label>
-								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Monitorizar Estado <input type="checkbox" name="mon_estado" id="mmMonEstado">
-								</label>
-								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Monitorizar Alertas <input type="checkbox" name="mon_alertas" id="mmMonAlerta">
-								</label>
-								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0;"> Máquina Activa <input type="checkbox" name="activo" id="mmActivo" checked>
-								</label>
+					<div class="form-control col-narrow" style="display: flex; align-items: flex-end; justify-content: flex-end; padding-bottom: 0.5vh;">
+								<label class="form-control-check" style="padding: 0.4vh 0; margin: 0; display: flex; align-items: center; gap: 0.5vw;"> Monitorizar Alertas <input type="checkbox" name="mon_alertas" id="mmMonAlerta"></label>
+							</div>
+
+							<!-- Último Control (Centrado) -->
+					<div class="form-control col-center">
+								<label>Último Control</label>
+						<input type="text" id="mmUltControl" name="UltimoControl" readonly style="width: 15vw; text-align: center; cursor: not-allowed;" title="Campo de solo lectura">
 							</div>
 						</div>
-						<div class="search-nav-group" style="margin-top: 2vh;">
+						<div class="search-nav-group" style="margin-top: 2.5vh;">
 							<button type="button" id="mmBtnFirst" class="btn-secondary btn-small btn-first">
 								<svg width="1.5vh" height="1.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
 									<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5" />
@@ -410,7 +410,31 @@
 				</div>
 			</div>
 		</div>
-
+		<!-- Modal para seleccionar tipo de registro (Panel de selección) -->
+		<div id="modalRegistroMaestro" class="modal" style="display: none;">
+			<div class="modal-content modal-sm">
+				<div class="modal-header">
+					<h2 id="modalRegistroMaestroTitle">¿Qué desea registrar?</h2>
+					<div class="header-actions">
+						<button type="button" id="cerrarRegistroMaestroBtn" class="cerrar-btn">
+							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+								<path d="M18 6L6 18M6 6l12 12" />
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="modal-body">
+					<div class="registro-maestro-options">
+						<button class="btn-secondary" id="btnRegistroMaquina">Máquina</button>
+						<button class="btn-secondary" id="btnRegistroOrganismo">Organismo</button>
+						<button class="btn-secondary" id="btnRegistroProvincia">Provincia</button>
+						<button class="btn-secondary" id="btnRegistroCliente">Cliente</button>
+						<button class="btn-secondary" id="btnRegistroError">Error</button>
+						<button class="btn-secondary" id="btnRegistroPais">País</button>
+					</div>
+				</div>
+			</div>
+		</div>
 		<!-- Modal para registrar Organismos -->
 		<div id="modalRegistroOrganismo" class="modal" style="display: none;">
 			<div class="modal-content modal-sm">
@@ -551,33 +575,6 @@
 				</form>
 			</div>
 		</div>
-
-		<!-- Modal para seleccionar tipo de registro (Panel de selección) -->
-		<div id="modalRegistroMaestro" class="modal" style="display: none;">
-			<div class="modal-content modal-sm">
-				<div class="modal-header">
-					<h2 id="modalRegistroMaestroTitle">¿Qué desea registrar?</h2>
-					<div class="header-actions">
-						<button type="button" id="cerrarRegistroMaestroBtn" class="cerrar-btn">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
-						</button>
-					</div>
-				</div>
-				<div class="modal-body">
-					<div class="registro-maestro-options">
-						<button class="btn-secondary" id="btnRegistroMaquina">Máquina</button>
-						<button class="btn-secondary" id="btnRegistroOrganismo">Organismo</button>
-						<button class="btn-secondary" id="btnRegistroProvincia">Provincia</button>
-						<button class="btn-secondary" id="btnRegistroCliente">Cliente</button>
-						<button class="btn-secondary" id="btnRegistroError">Error</button>
-						<button class="btn-secondary" id="btnRegistroPais">País</button>
-					</div>
-				</div>
-			</div>
-		</div>
-
 		<!-- Modal para registrar Países -->
 		<div id="modalRegistroPais" class="modal" style="display: none;">
 			<div class="modal-content modal-sm">
@@ -680,6 +677,7 @@
 								<span id="labelProvinciaPais" class="helper-name"></span>
 							</div>
 						</div>
+						<br> <!-- Aqui haya un <br> -->
 						<div class="form-control">
 							<label for="inputProvinciaLongitud">Longitud</label>
 							<input type="number" id="inputProvinciaLongitud" name="longitud" step="0.0000001">

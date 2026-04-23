@@ -20,18 +20,18 @@
 }
 
 @keyframes breathe-verde {
-    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.9; }
-    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 1; }
+    50% { transform: translateZ(0) scale(1); opacity: 1; }
 }
 
 @keyframes breathe-naranja {
-    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.85; }
     50% { transform: translateZ(0) scale(1.15); opacity: 1; }
 }
 
 @keyframes breathe-rojo {
-    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.8; }
-    50% { transform: translateZ(0) scale(1.1); opacity: 1; }
+    0%, 100% { transform: translateZ(0) scale(1); opacity: 0.85; }
+    50% { transform: translateZ(0) scale(1.15); opacity: 1; }
 }
 
 @keyframes alertIn {

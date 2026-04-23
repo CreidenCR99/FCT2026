@@ -3,7 +3,7 @@
  */
 import { appState } from './state.js';
 import * as dom from './dom.js';
-import { fetchAndRenderData, cargarOrganismos, cargarProvincias } from './api.js';
+import { fetchAndRenderData, cargarPaises, cargarOrganismos, cargarProvincias } from './api.js';
 import { iniciarActualizacionEstado, detenerActualizacionEstado } from './presentation.js';
 import { mostrarSkeleton } from './ui.js';
 import './theme.js';
@@ -34,6 +34,7 @@ document.addEventListener("visibilitychange", () => {
  */
 dom.form.addEventListener("submit", async (event) => {
 	event.preventDefault();
+	appState.filtroPais = dom.selectPais.value;
 	appState.filtroOrganismo = dom.selectOrganismo.value;
 	appState.filtroProvincia = dom.selectProvincia.value;
 	appState.sortCol = null;
@@ -58,10 +59,11 @@ dom.form.addEventListener("submit", async (event) => {
 });
 
 // Inicialización
+cargarPaises(); // Carga inicial de países en el selector
 cargarOrganismos(); // Carga inicial de organismos en el selector
 cargarProvincias(); // Carga inicial de provincias en el selector
 initSearchMaster(); // Inicializar Maestro de Búsqueda (F2)
 initAllMaestros(); // Inicializar Sistema Unificado de Maestros
 
 // Ejecutar búsqueda inicial sin filtros para mostrar todas las máquinas al cargar la aplicación
-//dom.form.dispatchEvent(new Event('submit'));
+dom.form.dispatchEvent(new Event('submit'));

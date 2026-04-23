@@ -3,7 +3,7 @@
  * Controla los elementos visuales de la interfaz, temporizadores y skeletons.
  */
 import { appState } from './state.js';
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Inyecta estados de carga (skeletons) en los contenedores de texto.
@@ -86,7 +86,7 @@ export function actualizarStatsUI() {
 
   const statsEl = document.getElementById("stats-info");
   if (statsEl && typeof morphdom === 'function') {
-    const newContent = `<span><b style="color:var(--kpi-ok-color)">${ok}</b> Activos   <b style="color:var(--kpi-log-color)">${alerta}</b> Errores   <b style="color:var(--kpi-alerta-color)">${rojo}</b> Sin respuesta</span>`;
+    const newContent = `<span><b style="color:var(--kpi-ok-color)">${ok}</b> Activos   <b style="color:var(--kpi-log-color)">${alerta}</b> Errores   <b style="color:var(--kpi-alerta-color); text-shadow: 1px 1px 0 rgba(255,255,255,0.05), -1px -1px 0 rgba(255,255,255,0.05), 1px -1px 0 rgba(255,255,255,0.05), -1px 1px 0 rgba(255,255,255,0.05);">${rojo}</b> Sin respuesta</span>`;
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = newContent;
     morphdom(statsEl, tempDiv, { childrenOnly: true });

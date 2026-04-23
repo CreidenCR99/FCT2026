@@ -22,6 +22,7 @@
  * @property {number} msNextRotation - Tiempo restante para el próximo cambio de país.
  * @property {number|null} inactivityTimeout - Referencia al timeout de inactividad del mapa.
  * @property {boolean} isProgrammaticMove - Flag para distinguir movimientos programáticos del usuario.
+ * @property {boolean} isDummyAlertsMode - Flag para activar modo de pruebas con alertas simuladas.
  */
 export const appState = {
   map: null,
@@ -40,5 +41,6 @@ export const appState = {
   msNextData: 0,
   msNextRotation: 0,
   inactivityTimeout: null,
-  isProgrammaticMove: false
+  isProgrammaticMove: false,
+  isDummyAlertsMode: false
 };

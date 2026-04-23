@@ -1,7 +1,7 @@
 /**
  * Módulo: table.js
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { appState } from './state.js';
 import * as dom from './dom.js';
 import { esFalso, getEstadoControl } from './utils.js';

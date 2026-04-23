@@ -3,7 +3,7 @@
  * Capa de abstracción para la comunicación con el backend de geolocalización.
  */
 import { appState } from './state.js';
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { aplicarFiltroHorario, actualizarStatsUI, sincronizarLeyenda } from './ui.js';
 import { syncAlerts } from './notifications.js';
 import { getCache, setCache } from './db.js';

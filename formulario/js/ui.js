@@ -1,7 +1,7 @@
 /**
  * Módulo: ui.js
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { getEstadoControl, esFalso, getClaseConexion, parseUltimoControl, escapeHtml, formatTimeStamp, obtenerErroresActivos } from './utils.js';
@@ -143,9 +143,15 @@ function animateNumber(id, start, end, type, duration) {
 	if (!obj) return;
 
 	if (duration === undefined) {
-		const delta = Math.abs(end - start);
-		// Duración proporcional: 500ms para delta=1 hasta 4000ms para delta >= 150
-		duration = delta <= 1 ? 250 : Math.min(4000, Math.round(500 + (delta - 1) * (3900 / 149)));
+		const delta = Math.abs(end - start); // Diferencia absoluta entre el valor inicial y final
+		// Calcula la duración de la animación:
+		// - Si el cambio es muy pequeño (delta <= 1), usa una duración base corta.
+		// - Para cambios mayores, la duración es proporcional al delta, escalando desde una base
+		//   hasta una duración máxima definida en la configuración.
+		duration = delta <= 1 ? CONFIG.KPI_ANIMATION.BASE_DURATION_SMALL_DELTA : Math.min(
+			CONFIG.KPI_ANIMATION.MAX_DURATION,
+			Math.round(CONFIG.KPI_ANIMATION.BASE_DURATION_LARGE_DELTA + (delta - 1) * ((CONFIG.KPI_ANIMATION.MAX_DURATION - CONFIG.KPI_ANIMATION.BASE_DURATION_LARGE_DELTA) / CONFIG.KPI_ANIMATION.DELTA_CALC_FACTOR))
+		);
 	}
 
 	const card = obj.closest('.kpi-card');
@@ -378,12 +384,19 @@ export function renderLogsNormal(data) {
       </div>
       <div class="logs-expand-wrapper ${isMinimized ? 'is-minimized' : ''}">
         <div class="logs-normal-grid" id="logsGrid">
-          ${errores.map((e, idx) => `
-            <div class="log-item-clickable" data-idx="${idx}" title="Click para ver detalles y gestionar">
-              <strong style="color:#f58a07">${escapeHtml(e.maquina.Descripcion)}:</strong> 
-              ${escapeHtml(e.log.Mensaje)}
-            </div>
-          `).join("")}
+          ${errores.map((e, idx) => {
+            const ts = String(e.log.TimeStamp || "");
+            const fecha = ts.length >= 12 
+              ? `[${ts.slice(6, 8)}/${ts.slice(4, 6)}/${ts.slice(0, 4)} ${ts.slice(8, 10)}:${ts.slice(10, 12)}] `
+              : "";
+            return `
+              <div class="log-item-clickable" data-idx="${idx}" title="Click para ver detalles y gestionar">
+                <span style="font-family: monospace; opacity: 0.8;">${escapeHtml(fecha)}</span>
+                <strong style="color:#f58a07">${escapeHtml(e.maquina.Descripcion)}:</strong> 
+                ${escapeHtml(e.log.Mensaje)}
+              </div>
+            `;
+          }).join("")}
         </div>
       </div>
     `;
@@ -562,7 +575,12 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 
 	dom.formEdicionLog.classList.add('form-invalid');
 	if (!dom.formEdicionLog.checkValidity()) {
-		Swal.fire("Atención", "Por favor, rellene todos los campos obligatorios marcados con *", "warning");
+		Swal.fire({
+			title: "Atención",
+			text: "Por favor, rellene todos los campos obligatorios marcados con *",
+			icon: "warning",
+			target: document.fullscreenElement || document.body
+		});
 		return;
 	}
 
@@ -575,7 +593,12 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 
 	const fechaSeleccionada = new Date(`${fechaRaw}T${horaRaw}`);
 	if (fechaSeleccionada > new Date()) {
-		Swal.fire('Error', "No es posible registrar un cambio con una fecha u hora futura.", 'error');
+		Swal.fire({
+			title: 'Error',
+			text: "No es posible registrar un cambio con una fecha u hora futura.",
+			icon: 'error',
+			target: document.fullscreenElement || document.body
+		});
 		return;
 	}
 
@@ -628,7 +651,8 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 				text: 'El estado del error se ha guardado correctamente.',
 				icon: 'success',
 				confirmButtonColor: 'var(--primary)',
-				timer: 2000
+				timer: 2000,
+				target: document.fullscreenElement || document.body
 			});
 			cerrarModal();
 		} else {
@@ -636,7 +660,12 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 		}
 	} catch (error) {
 		console.error("Error:", error);
-		Swal.fire('Error', error.message, 'error');
+		Swal.fire({
+			title: 'Error',
+			text: error.message,
+			icon: 'error',
+			target: document.fullscreenElement || document.body
+		});
 	} finally {
 		btnSubmit.disabled = false;
 	}

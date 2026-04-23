@@ -3,6 +3,10 @@
    SweetAlert2 Overrides — Sincronización de alertas con el sistema de tokens.
    ======================================================================== */
 
+.swal2-container {
+  z-index: 9999999 !important; /* Asegura que la alerta esté siempre sobre los modales */
+}
+
 .swal2-popup {
   background: var(--surface) !important;
   color: var(--text) !important;

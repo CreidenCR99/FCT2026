@@ -1,7 +1,7 @@
 /**
  * Módulo: presentation.js
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { renderTabla } from './table.js';
@@ -322,9 +322,21 @@ function renderItem(item) {
 			"estado-gris": "#6e6e73"
 		};
 		const bg = colorMap[item.estado.clase] || "#6e6e73";
-		// Hacemos que la fila de la máquina sea clicable en presentación
-		return `<div class="linea-maquina clickable" style="background:${bg}; cursor:pointer" data-ns="${escapeHtml(item.fila.NumeroSerie)}">
-        <span class="maquina-badge">${escapeHtml(item.estado.texto)}</span>${escapeHtml(item.texto)}
+
+		// Formateo de la última conexión (YYYYMMDDHHMM -> DD/MM/YYYY HH:mm)
+		const uc = String(item.fila.UltimoControl || "");
+		const fechaFormateada = uc.length >= 12 
+			? `${uc.slice(6, 8)}/${uc.slice(4, 6)}/${uc.slice(0, 4)} ${uc.slice(8, 10)}:${uc.slice(10, 12)}`
+			: "-";
+
+		return `<div class="linea-maquina clickable" style="background:${bg}; cursor:pointer; display: flex; justify-content: space-between; align-items: center;" data-ns="${escapeHtml(item.fila.NumeroSerie)}">
+        <div style="display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+          <span class="maquina-badge">${escapeHtml(item.estado.texto)}</span>
+          <span style="overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.texto)}</span>
+        </div>
+        <span class="maquina-fecha-pres" style="font-family: monospace; font-size: 0.85em; opacity: 0.9; margin-left: 15px; white-space: nowrap;">
+          ${escapeHtml(fechaFormateada)}
+        </span>
       </div>`;
 	}
 	return "";

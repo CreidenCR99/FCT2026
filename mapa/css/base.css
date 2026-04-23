@@ -6,6 +6,7 @@
 body, html, #map {
     margin: 0; padding: 0; height: 100%; width: 100%;
     background: #0b0b0d; font-family: 'Segoe UI', sans-serif;
+    user-select: none;
 }
 
 /* Filtro para convertir mapa de relieve en modo oscuro */

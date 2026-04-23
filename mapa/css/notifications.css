@@ -7,7 +7,7 @@
     position: fixed;
     left: 1.1vh;
     height: 1px;
-    width: 20vw;
+    width: 22vw;
     z-index: 1000;
     overflow: hidden;
     transition: all 1s ease;
@@ -21,7 +21,7 @@
 
 .swiper-slide.fail-note {
     height: auto !important; /* Swiper slides por defecto son flex-height */
-    width: 100%;
+    width: fit-content;
     color: #fff;
     padding: 1.2vh 1vw;
     border-radius: var(--radius-sm);

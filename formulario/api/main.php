@@ -9,11 +9,11 @@ $modo = trim($_GET["modo"] ?? "");
 
 switch ($modo) {
     // --- MÁQUINAS ---
+    case "paises":
     case "organismos":
     case "provincias":
     case "maquinas":
     case "maquinas_navegacion":
-    case "verificar_ns":
     case "crear_maquina":
     case "eliminar_maquina":
         require_once __DIR__ . "/machines.php";
@@ -33,6 +33,8 @@ switch ($modo) {
     case "guardar_maestro":
     case "eliminar_maestro":
     case "get_maestro_detalle":
+    case "verificar_duplicado":
+    case "verificar_ns":
     case "maquinas_search":
         require_once __DIR__ . "/masters.php";
         break;

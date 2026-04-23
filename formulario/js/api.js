@@ -1,7 +1,7 @@
 /**
  * Módulo: api.js
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { appState } from './state.js';
 import * as dom from './dom.js';
 import { renderKPIs, renderLogsNormal, mostrarSkeleton, actualizarDatosModal, limpiarTrends } from './ui.js';
@@ -16,7 +16,7 @@ import { calcularMaxLineas, construirPaginasPresentacion, detenerActualizacionEs
  * Solo se muestra si hay algún filtro activo que no sea el valor por defecto (vacío).
  */
 export function actualizarVisibilidadLimpiar() {
-	const hayFiltros = dom.selectOrganismo.value !== "" || dom.selectProvincia.value !== "";
+	const hayFiltros = dom.selectPais.value !== "" || dom.selectOrganismo.value !== "" || dom.selectProvincia.value !== "";
 	if (dom.limpiarFiltrosBtn) {
 		const estaOculto = dom.limpiarFiltrosBtn.style.display === "none" || dom.limpiarFiltrosBtn.style.display === "";
 		if (hayFiltros && estaOculto) {
@@ -26,7 +26,7 @@ export function actualizarVisibilidadLimpiar() {
 			dom.limpiarFiltrosBtn.style.animation = "btnPopOut 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards";
 			// Esperamos a que termine la animación antes de ocultar el elemento del flujo del DOM
 			dom.limpiarFiltrosBtn.addEventListener('animationend', () => {
-				if (dom.selectOrganismo.value === "" && dom.selectProvincia.value === "") {
+				if (dom.selectPais.value === "" && dom.selectOrganismo.value === "" && dom.selectProvincia.value === "") {
 					dom.limpiarFiltrosBtn.style.display = "none";
 				}
 			}, {
@@ -37,14 +37,38 @@ export function actualizarVisibilidadLimpiar() {
 }
 
 /**
- * Realiza una petición al backend para obtener la lista de organismos únicos disponibles.
- * Una vez obtenidos, puebla dinámicamente el selector (select) de organismos en el formulario.
+ * Realiza una petición al backend para obtener la lista de países disponibles.
  * @async
  * @returns {Promise<void>}
  */
-export async function cargarOrganismos() {
+export async function cargarPaises() {
 	try {
-		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=organismos`);
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=paises`);
+		const data = await res.json();
+		dom.selectPais.innerHTML = `<option value="">Todos los países</option>`;
+		data.forEach(item => {
+			const opt = document.createElement("option");
+			opt.value = item.Pais;
+			opt.textContent = item.Pais;
+			dom.selectPais.appendChild(opt);
+		});
+		actualizarVisibilidadLimpiar();
+	} catch (e) {
+		dom.selectPais.innerHTML = `<option value="">Error al cargar</option>`;
+		console.error(e);
+	}
+}
+
+/**
+ * Realiza una petición al backend para obtener la lista de organismos únicos disponibles.
+ * Una vez obtenidos, puebla dinámicamente el selector (select) de organismos en el formulario.
+ * @async
+ * @param {string} [pais=""] - Nombre del país para filtrar los organismos.
+ * @returns {Promise<void>}
+ */
+export async function cargarOrganismos(pais = "") {
+	try {
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=organismos&pais=${encodeURIComponent(pais)}`);
 		const data = await res.json();
 		dom.selectOrganismo.innerHTML = `<option value="">Todos los organismos</option>`;
 		data.forEach(item => {
@@ -67,11 +91,12 @@ export async function cargarOrganismos() {
  * en los nuevos resultados.
  * @async
  * @param {string} [organismo=""] - Nombre del organismo para filtrar las provincias.
+ * @param {string} [pais=""] - Nombre del país para filtrar las provincias.
  * @returns {Promise<void>}
  */
-export async function cargarProvincias(organismo = "") {
+export async function cargarProvincias(organismo = "", pais = "") {
 	try {
-		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=provincias&organismo=${encodeURIComponent(organismo)}`);
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=provincias&organismo=${encodeURIComponent(organismo)}&pais=${encodeURIComponent(pais)}`);
 		const data = await res.json();
 		const valorActual = dom.selectProvincia.value;
 		dom.selectProvincia.innerHTML = `<option value="">Todas las provincias</option>`;
@@ -115,19 +140,27 @@ export async function cargarErrores() {
 	}
 }
 
-dom.selectOrganismo.addEventListener("change", () => {
-	cargarProvincias(dom.selectOrganismo.value);
+dom.selectPais?.addEventListener("change", () => {
+	cargarOrganismos(dom.selectPais.value);
+	cargarProvincias(dom.selectOrganismo.value, dom.selectPais.value);
 	actualizarVisibilidadLimpiar();
 });
 
-dom.selectProvincia.addEventListener("change", () => {
+dom.selectOrganismo?.addEventListener("change", () => {
+	cargarProvincias(dom.selectOrganismo.value, dom.selectPais.value);
 	actualizarVisibilidadLimpiar();
 });
 
-dom.limpiarFiltrosBtn.addEventListener("click", () => {
+dom.selectProvincia?.addEventListener("change", () => {
+	actualizarVisibilidadLimpiar();
+});
+
+dom.limpiarFiltrosBtn?.addEventListener("click", () => {
+	dom.selectPais.value = "";
 	dom.selectOrganismo.value = "";
 	dom.selectProvincia.value = "";
-	cargarProvincias("");
+	cargarOrganismos("");
+	cargarProvincias("", "");
 	actualizarVisibilidadLimpiar();
 });
 
@@ -152,7 +185,7 @@ export async function fetchAndRenderData() {
 	try {
 		// Realizamos la llamada al backend con los filtros actuales de estado
 		const res = await fetch(
-			`${CONFIG.API_ENDPOINT}?modo=maquinas&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`, {
+			`${CONFIG.API_ENDPOINT}?modo=maquinas&pais=${encodeURIComponent(appState.filtroPais)}&organismo=${encodeURIComponent(appState.filtroOrganismo)}&provincia=${encodeURIComponent(appState.filtroProvincia)}`, {
 				signal: appState.currentController.signal
 			}
 		);

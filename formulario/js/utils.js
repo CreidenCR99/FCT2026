@@ -2,7 +2,7 @@
  * Módulo: utils.js
  * Funciones de utilidad pura y cálculos de estado para evitar dependencias circulares.
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Normaliza la comprobación de valores "falsos" o "nulos" que pueden venir de la base de datos como strings.

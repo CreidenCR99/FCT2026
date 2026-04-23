@@ -26,19 +26,27 @@ form {
 h1 {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 1vh;
   margin: 0;
   font-size: clamp(2.5vh, 2.4vw, 3.5vh);
   font-weight: 700;
   color: var(--text);
 }
+
 .logo-icon {
   flex-shrink: 0;
 }
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 1.5vw;
+  row-gap: 1.5vh;
+}
+
+#form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5vw;
 }
 
@@ -130,10 +138,37 @@ h1 {
   transform: translateX(1vw);
 }
 
-select#organismo,
-select#provincia {
+form#form select {
   border-color: var(--text-muted) !important;
 }
+
+/* --- Grid Específico Registro de Máquinas --- */
+.form-grid-maquinas {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  gap: 1.5vh 1.2vw !important;
+}
+
+.form-grid-maquinas .col-half { grid-column: span 3; }
+.form-grid-maquinas .col-wide { grid-column: span 4; }
+.form-grid-maquinas .col-narrow { grid-column: span 2; }
+.form-grid-maquinas .col-center {
+  grid-column: span 6;
+  justify-self: center;
+  text-align: center;
+  margin-top: 1vh;
+}
+
+/* --- Bordes Dinámicos por Conexión --- */
+.border-con-verde { 
+  border: 2px solid var(--kpi-ok-color) !important; 
+  background-color: rgba(40, 167, 69, 0.05) !important;
+}
+.border-con-rojo { 
+  border: 2px solid var(--kpi-alerta-color) !important; 
+  background-color: rgba(161, 7, 2, 0.05) !important;
+}
+.border-con-gris { border: 2px solid var(--border) !important; }
 
 .helper-name { 
   font-size: 0.85em; 

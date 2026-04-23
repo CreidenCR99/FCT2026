@@ -2,7 +2,7 @@
  * Módulo: searchMaster.js
  * Gestiona el modal de búsqueda maestra (F2).
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import * as dom from './dom.js';
 import { appState } from './state.js';
 

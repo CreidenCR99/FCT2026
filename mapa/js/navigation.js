@@ -3,7 +3,7 @@
  * Maneja la lógica de navegación cinematográfica entre países y el control de rotación.
  */
 import { appState } from './state.js';
-import { CONFIG, INSET_VIEWS } from './config.js';
+import { CONFIG, INSET_VIEWS } from '../config.js';
 import { actualizarStatsUI } from './ui.js';
 import { renderCarousel } from './notifications.js';
 

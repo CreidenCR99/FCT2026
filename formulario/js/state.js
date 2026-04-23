@@ -1,7 +1,7 @@
 /**
  * Módulo: state.js
  */
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Frecuencia de actualización automática leída de la configuración.
@@ -44,6 +44,7 @@ export const appState = {
 	paginasPresentacion: [],
 	paginaPresentacionActual: 0,
 	estaPausado: false,
+	filtroPais: "",
 	filtroOrganismo: "",
 	filtroProvincia: "",
 	filtroTexto: "",

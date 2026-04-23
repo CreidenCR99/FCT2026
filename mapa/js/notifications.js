@@ -3,7 +3,7 @@
  * Gestiona el sistema de colas y el renderizado de notificaciones de fallo.
  */
 import { appState } from './state.js';
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { getCache } from './db.js';
 
 let swiperInstance = null;
@@ -107,6 +107,9 @@ export function syncAlerts(serverAlerts) {
   for (const sn of alertTimestamps.keys()) {
     if (!currentSns.has(sn)) alertTimestamps.delete(sn);
   }
+  if (serverAlerts.length === 0) {
+    appState.isDummyAlertsMode = true;
+  }
 
   // Actualizamos el historial para la próxima vuelta
   appState.lastAlerts = currentSns;
@@ -135,12 +138,28 @@ export function iniciarCarrusel() {
     },
     allowTouchMove: true,
     on: {
-      // Lógica de teletransporte para Swiper: cuando llegamos al final del buffer, volvemos al inicio.
-      slideChange: function () {
-        // Si llegamos al inicio del bloque duplicado (buffer de 7), teletransportamos al inicio
-        if (appState.activeAlerts.length > 0 && this.activeIndex >= appState.activeAlerts.length) {
-          this.slideTo(0, 0);
-          this.autoplay.start();
+      setTranslate: function (swiper) {
+        // Evitamos recursividad si ya estamos reseteando
+        if (swiper.isResetting) return;
+
+        // En lugar de updateActiveIndex (pesado), calculamos el progreso de forma ligera.
+        // Teletransportamos solo cuando el primer elemento del buffer (índice = length) 
+        // llega al inicio del contenedor.
+        if (appState.activeAlerts.length > 0 && swiper.activeIndex >= appState.activeAlerts.length) {
+          swiper.isResetting = true;
+          swiper.autoplay.stop();
+          swiper.setTransition(0);
+          swiper.slideTo(0, 0);
+
+          // Restauramos el comportamiento de ticker lineal tras el salto
+          if (swiper.wrapperEl) swiper.wrapperEl.style.transitionTimingFunction = 'linear';
+          
+          setTimeout(() => {
+            if (appState.notificationsVisible) {
+              swiper.autoplay.start();
+            }
+            swiper.isResetting = false;
+          }, 50); // Pequeño margen para que el DOM se asiente
         }
       }
     },
@@ -189,10 +208,10 @@ export function renderCarousel() {
 
   // Reposicionar el botón de cola según el minimapa
   if (queueContainer) {
-      queueContainer.style.bottom = isInsetActive ? '25.5vh' : '0.5vh';
+      queueContainer.style.bottom = isInsetActive ? '0.5vh' : '0.5vh';
   }
   
-  const topLimit = uiOverlay ? uiOverlay.getBoundingClientRect().bottom + 10 : 100;
+  const topLimit = uiOverlay ? uiOverlay.getBoundingClientRect().bottom + 0 : 0;
   const bottomLimit = queueContainer ? (queueContainer.getBoundingClientRect().top - 10) : (window.innerHeight - 20);
   
   feed.style.opacity = "1";
@@ -224,20 +243,45 @@ export function renderCarousel() {
   // NOTA: La combinación de Swiper Loop + Morphdom es compleja porque Swiper genera clones 
   // que Morphdom no conoce. Detenemos el autoplay antes de manipular el DOM.
   if (swiperInstance) swiperInstance.autoplay.stop();
+
+  // Si el swiper ya estaba en el área de buffer o separador, reseteamos a 0 
+  // antes del morph para evitar saltos visuales extraños con el nuevo contenido.
+  if (swiperInstance && (swiperInstance.activeIndex) >= appState.activeAlerts.length) {
+    swiperInstance.slideTo(0, 0);
+  }
   const currentTranslate = swiperInstance ? swiperInstance.getTranslate() : 0;
 
-  // 2. Generar el HTML: Lista real + buffer de los 7 primeros para el efecto ticker
-  const alertsToRender = [...appState.activeAlerts];
-  if (alertsToRender.length > 0) {
+  // 2. Generar el HTML: Lista real + buffer de los 7 primeros
+  let alertsToRender = [];
+  const shouldShowDummy = appState.activeAlerts.length === 0;
+  appState.isDummyAlertsMode = shouldShowDummy; // Actualizar el flag de estado
+
+  if (shouldShowDummy) {
+    // Generar 7 alertas de relleno
+    for (let i = 0; i < 7; i++) {
+      alertsToRender.push({
+        sn: `dummy-${i}`,
+        status: 'gris', // Puedes usar un estado específico para las dummy alerts
+        nombre: 'Esperando alertas...',
+        provincia: 'SIN DATOS',
+        codigoError: 'N/A',
+        isRecent: false
+      });
+    }
+  } else {
+    alertsToRender = [...appState.activeAlerts];
+  }
+
+  if (alertsToRender.length > 0) { // Solo añadir buffer si hay elementos para mostrar
     // Añadimos los 7 primeros al final para que el salto sea invisible
-    alertsToRender.push(...appState.activeAlerts.slice(0, 7));
+    alertsToRender.push(...alertsToRender.slice(0, Math.min(7, alertsToRender.length)));
   }
 
   const html = alertsToRender.map(alerta => `
     <div class="swiper-slide fail-note status-${alerta.status} ${alerta.isRecent ? 'recent-alert-glow' : ''}">
       <div class="fail-content">
         <strong>${alerta.status === "rojo" ? "CONEXIÓN" : "ERROR"}:</strong> ${alerta.nombre}
-        <br><small>${alerta.provincia.toUpperCase()} - ${alerta.codigoError}</small>
+        <br><small>${alerta.provincia ? alerta.provincia.toUpperCase() : ''} - ${alerta.codigoError}</small>
       </div>
     </div>
   `).join("");

@@ -3,7 +3,7 @@
  * Orquestador principal de la aplicación de monitoreo.
  */
 import { appState } from './state.js';
-import { CONFIG, MAPAS } from './config.js';
+import { CONFIG, MAPAS } from '../config.js';
 import { cargarPaises, actualizarDatos } from './api.js';
 import { mostrarSkeleton, aplicarFiltroHorario, actualizarTimers } from './ui.js';
 import { navegarPais, togglePausa, enfocarPais } from './navigation.js';
