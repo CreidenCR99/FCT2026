@@ -2,18 +2,23 @@
 <html lang="es" data-theme="light">
 <head>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link rel="icon" type="image/x-icon" href="favicon.jpg" />
+	<link rel="icon" type="image/x-icon" href="../favicon.jpg" />
     <meta charset="UTF-8">
     <title>SicoLares - Mapa de Monitoreo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/main.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
+    <!-- Pantalla de Carga -->
+    <div id="loading-screen">
+        <div class="loader-spinner"></div>
+        <p>Iniciando sistema de monitoreo...</p>
+    </div>
+
     <div id="logo-container" class="hud-item stagger-1">
-        <img src="LOGO_SicoLares.png" alt="SicoLares">
+        <img src="../LOGO_SicoLares.png" alt="SicoLares">
     </div>
 
     <!-- Barra de progreso de actualización de datos -->
@@ -57,11 +62,10 @@
     </div>
 
     <!-- Contenedor del Carrusel de Fallos -->
-    <div id="failure-feed" class="swiper">
-        <div class="swiper-wrapper" id="failure-feed-wrapper"></div>
+    <div id="failure-feed" class="ticker-viewport">
+        <div class="ticker-content" id="failure-feed-wrapper"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="js/main.js" type="module"></script>
 </body>
 </html>

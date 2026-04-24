@@ -2,7 +2,7 @@
 /**
  * SicoLares API - Entry Point
  */
-require_once __DIR__ . "/bootstrap.php";
+require_once __DIR__ . "../../../bootstrap.php";
 
 // Limpiamos el modo de posibles espacios o saltos de línea accidentales
 $modo = trim($_GET["modo"] ?? "");

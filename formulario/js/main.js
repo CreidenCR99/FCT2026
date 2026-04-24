@@ -10,6 +10,7 @@ import './theme.js';
 import './table.js';
 import { initSearchMaster } from './searchMaster.js';
 import { initAllMaestros } from './entityMaster.js';
+import { initMapPicker } from './mapa.js';
 
 // --- visibilitychange ---
 
@@ -64,6 +65,7 @@ cargarOrganismos(); // Carga inicial de organismos en el selector
 cargarProvincias(); // Carga inicial de provincias en el selector
 initSearchMaster(); // Inicializar Maestro de Búsqueda (F2)
 initAllMaestros(); // Inicializar Sistema Unificado de Maestros
+initMapPicker(); // Inicializar lógica de Leaflet
 
 // Ejecutar búsqueda inicial sin filtros para mostrar todas las máquinas al cargar la aplicación
 dom.form.dispatchEvent(new Event('submit'));

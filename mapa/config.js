@@ -7,14 +7,16 @@
  * Constantes de configuración de zoom y tiempos de ejecución.
  * @property {String} API_ENDPOINT - URL base para las llamadas a la API.
  * @property {Number} MS_DATOS - Intervalo de actualización de datos en milisegundos.
- * @property {Number} MS_ROTACION - Intervalo de rotación automática entre países en milisegundos.
- * @property {Number} VELOCIDAD_CARRUSEL - Intervalo de cambio de alerta en el carrusel en milisegundos. (15.000 = LENTO | 1.000 = RAPIDO)
+ * @property {Number} MS_ROTACION_DEFAULT - Intervalo de rotación automática entre países por defecto en milisegundos.
+ * @property {Object} MS_ROTACION_PAISES - Configuración de intervalos de rotación específicos por país (Utiliza el código de 3 números del país).
+ * @property {Number} VELOCIDAD_CARRUSEL - Intervalo de cambio de alerta en el carrusel en milisegundos. (60.000 = LENTO | 1.000 = RAPIDO)
  * @property {Number} INACTIVO - Tiempo de inactividad del usuario antes de retomar la rotación automática. (Dejar en -1 para desactivarlo)
  *      @description Si el usuario ha cambiado la posición de la camara, despues de estos segundos, la camara volvera a su posición original.
  * @property {Number} ZOOM_DEFAULT - Nivel de zoom por defecto para países sin configuración específica.
- * @property {Object} ZOOM_PAISES - Configuración de niveles de zoom específicos por país (clave: nombre del país en minúsculas).
+ * @property {Object} ZOOM_PAISES - Configuración de niveles de zoom específicos por país (Utiliza el codigo de 3 numeros del país).
  * @property {Object} NOTIFICATIONS - Configuración relacionada con las notificaciones y alertas.
  *      @property {Number} RECENT_THRESHOLD_MS - Umbral de tiempo para considerar una alerta como "reciente" en milisegundos y aplicarle un brillo.
+ *      @property {Number} LOOP_BUFFER_SIZE - Cantidad de elementos que se repiten al final de la lista para simular un desplazamiento infinito suave.
  * @property {Object} SOUNDS - Configuración de sonidos para diferentes tipos de alertas.
  *      @property {Number} VOLUME - Volumen general para los sonidos (rango de 0.0 a 1.0).
  *      @property {Object} TYPES - Definición de tipos de sonidos con sus parámetros de frecuencia(Hz), tipo de onda y duración(EN SEGUNDOS).
@@ -31,16 +33,26 @@ export const CONFIG = {
   API_ENDPOINT: 'api/main.php', // URL base de la API
 
   MS_DATOS: 7500,               // 7500 ms | 7,5 segundos 
-  MS_ROTACION: 300000,          // 300000 ms | 5 minutos
-  VELOCIDAD_CARRUSEL: 15000,    // 15000 (15.000 = LENTO | 1.000 = RAPIDO)
+  MS_ROTACION_DEFAULT: 300000,  // 300000 ms | 5 minutos
+  MS_ROTACION_PAISES: {
+    '724': 300000,              // 300000 ms | 5 minutos - España
+    '170': 120000,              // 120000 ms | 2 minutos - Colombia
+  },
+  VELOCIDAD_CARRUSEL: 20000,    // 20000 (60.000 = LENTO | 1.000 = RAPIDO)
   INACTIVO: 30000,              // 30000 ms | 30 segundos (-1 para desactivarlo) 
   ZOOM_DEFAULT: 6.5,            // 6.5
   ZOOM_PAISES: {
-    'españa': 6.7,              // 6.7
-    'colombia': 6.5             // 6.5
+    '724': 6.7,                 // 6.7 - España
+    '170': 6.5,                 // 6.5 - Colombia
+    // Zoom para otros posibles paises (México, Portugal y Francia)
+    // '484': 6.0,              // 6.0 - México
+    // '620': 6.7,              // 6.7 - Portugal
+    // '250': 6.6,              // 6.6 - Francia
+
   },
   NOTIFICATIONS: {
-    RECENT_THRESHOLD_MS: 180000 // 180000 ms | 3 minutos
+    RECENT_THRESHOLD_MS: 120000,// 120000 ms | 2 minutos
+    LOOP_BUFFER_SIZE: 10        // 10
   },
   SOUNDS: {
     VOLUME: 0.5,                // 0.5 (Volumen general de 0.0 a 1.0)
@@ -56,15 +68,14 @@ export const CONFIG = {
 
 /**
  * Configuración de regiones lejanas por país para el mapa secundario (inset).
- * @example "españa": { center: [28.4, -16.0], zoom: 6.3, label: "Canarias" }
+ * @example '724': { center: [28.4, -16.0], zoom: 6.3, label: "Canarias" }
  * @type {Object}
  */
 export const INSET_VIEWS = {
-  "españa": { center: [28.4, -16.0], zoom: 6.3, label: "Canarias" }
-  /* Coordenadas de otras posibles islas
-  "portugal": { center: [32.7, -17.0], zoom: 7, label: "Madeira / Azores" },
-  "francia": { center: [14.6, -61.0], zoom: 7, label: "Antillas" },
-  */
+  '724': { center: [28.4, -16.0], zoom: 6.3, label: "Canarias" },
+  // Coordenadas de otras posibles islas (Portugal y Francia)
+  // '620': { center: [32.7, -17.0], zoom: 7.0, label: "Madeira / Azores" },
+  // '250': { center: [14.6, -61.0], zoom: 7.0, label: "Antillas" },
 };
 
 

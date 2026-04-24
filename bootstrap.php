@@ -78,6 +78,7 @@ function loadEnv($path) {
 
 loadEnv(__DIR__ . "/.env");
 
+
 // Conexión a la base de datos
 $serverName = getenv("DB_SERVER");
 $connectionInfo = [

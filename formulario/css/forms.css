@@ -89,6 +89,34 @@ h1 {
   box-shadow: 0 0 0 0.4vh var(--primary-bg);
 }
 
+/* --- Contenedor para inputs con botones (ej: Coordenadas + Mapa) --- */
+.input-group {
+  display: flex;
+  gap: 0.5vw;
+  width: 100%;
+}
+
+.input-group input {
+  flex: 1;
+}
+
+.btn-icon-map {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.2vw;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-icon-map:hover {
+  filter: brightness(1.1);
+}
+
 /**
  * Checkbox transformado en Toggle Switch moderno
  */
@@ -175,4 +203,9 @@ form#form select {
   color: var(--primary); 
   font-weight: 600; 
   margin-left: 8px; 
+}
+
+label .obligatorio {
+  color: var(--kpi-alerta-color);
+  display: inline;
 }

@@ -7,6 +7,7 @@ import * as dom from './dom.js';
 import { openSearchMasterExternally } from './searchMaster.js';
 import { appState } from './state.js';
 import { getClaseConexion } from './utils.js';
+import { abrirMapaPicker } from './mapa.js'
 
 /** Icono SVG para el botón de volver */
 const SVG_BACK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
@@ -739,3 +740,36 @@ export function initAllMaestros() {
         };
     });
 }
+
+
+// --- Manejo de Coordenadas y Mapa ---
+
+document.getElementById('btnMapaPais')?.addEventListener('click', () => {
+	abrirMapaPicker((lat, lng) => {
+		document.getElementById('inputPaisLatitud').value = lat;
+		document.getElementById('inputPaisLongitud').value = lng;
+	});
+});
+
+document.getElementById('btnMapaProvincia')?.addEventListener('click', () => {
+	abrirMapaPicker((lat, lng) => {
+		document.getElementById('inputProvinciaLatitud').value = lat;
+		document.getElementById('inputProvinciaLongitud').value = lng;
+	});
+});
+
+// Validación visual de rangos
+const validarCoordInput = (id, min, max) => {
+	const input = document.getElementById(id);
+	if (!input) return;
+	input.addEventListener('input', () => {
+		const val = parseFloat(input.value);
+		const esValido = isNaN(val) || (val >= min && val <= max);
+		input.style.borderColor = esValido ? '' : 'var(--kpi-alerta-color)';
+	});
+};
+
+validarCoordInput('inputPaisLatitud', -90, 90);
+validarCoordInput('inputPaisLongitud', -180, 180);
+validarCoordInput('inputProvinciaLatitud', -90, 90);
+validarCoordInput('inputProvinciaLongitud', -180, 180);

@@ -4,11 +4,14 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!--Favicon en jpg-->
-		<link rel="icon" type="image/x-icon" href="favicon.jpg" />
+		<link rel="icon" type="image/x-icon" href="../favicon.jpg" />
 		<title>SicoLares - Control de máquinas</title>
 		<link rel="stylesheet" href="css/main.css" />
 		<!-- Librerías de utilidad -->
 		<script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.min.js"></script>
+		<!-- Leaflet Map -->
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 		<!-- Punto de entrada principal como módulo -->
 		<script src="js/main.js" type="module"></script>
@@ -17,12 +20,12 @@
 		<main id="contenido-principal">
 			<!-- Logo flotante al hacer scroll -->
 			<div id="floatingLogo" class="floating-logo" aria-hidden="true">
-				<img src="LOGO_SicoLares.png" alt="SicoLares">
+				<img src="../LOGO_SicoLares.png" alt="SicoLares">
 			</div>
 			<form id="form" novalidate>
 				<div class="form-header">
 					<h1>
-						<img class="page-logo" src="LOGO_SicoLares.png" alt="Logo SicoLares"> - Control de máquinas
+						<img class="page-logo" src="../LOGO_SicoLares.png" alt="Logo SicoLares"> - Control de máquinas
 					</h1>
 					<button type="button" id="themeToggle" class="btn-icon" aria-label="Cambiar a modo oscuro"></button>
 				</div>
@@ -75,7 +78,7 @@
 				<!-- Cabecera de la tabla -->
 				<div class="tabla-header">
 					<div class="logo-fullscreen" aria-hidden="true">
-						<img src="LOGO_SicoLares.png" alt="Logo SicoLares">
+						<img src="../LOGO_SicoLares.png" alt="Logo SicoLares">
 					</div>
 					<h2 id="tabla-titulo">Resultados</h2>
 					<div id="indicadorReproduccion" class="indicador-reproduccion" aria-live="polite"></div>
@@ -126,7 +129,7 @@
 			<form id="formMaquinasMaster">
 				<div class="form-grid form-grid-maquinas">
 					<div class="form-control col-half">
-								<label>Número de Serie <label style="color: red; display: inline;">*</label>
+								<label>Número de Serie <label class="obligatorio">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="text" name="ns" id="mmNS" maxlength="50" required>
@@ -139,12 +142,12 @@
 								</div>
 							</div>
 					<div class="form-control col-half">
-								<label>Descripción <label style="color: red; display: inline;">*</label>
+								<label>Descripción <label class="obligatorio">*</label>
 								</label>
 								<input type="text" name="descripcion" id="mmDesc" maxlength="50" required>
 							</div>
 					<div class="form-control col-half">
-								<label>Tipo de Máquina <label style="color: red; display: inline;">*</label>
+								<label>Tipo de Máquina <label class="obligatorio">*</label>
 								</label>
 								<select name="tipo" id="mmTipo" required>
 									<option value="TC">TC - Tunel cliente</option>
@@ -165,7 +168,7 @@
 
 							<!-- Organismo | Actualizar -->
 					<div class="form-control col-wide">
-								<label>Organismo (4) <label style="color: red; display: inline;">*</label>
+								<label>Organismo (4) <label class="obligatorio">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="organismo" id="mmOrg" maxlength="4" style="width: 6vw;" required>
@@ -179,7 +182,7 @@
 
 							<!-- Cliente | Monitorizar Estado -->
 					<div class="form-control col-wide">
-								<label>Cliente (5) <label style="color: red; display: inline;">*</label>
+								<label>Cliente (5) <label class="obligatorio">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="cliente" id="mmCli" maxlength="5" style="width: 6vw;" required>
@@ -193,7 +196,7 @@
 
 							<!-- Provincia | Monitorizar Alertas -->
 					<div class="form-control col-wide">
-								<label>Provincia (2) <label style="color: red; display: inline;">*</label>
+								<label>Provincia (2) <label class="obligatorio">*</label>
 								</label>
 								<div class="form-row-inline">
 									<input type="number" name="provincia" id="mmProv" maxlength="2" style="width: 6vw;" required>
@@ -352,19 +355,19 @@
 						<input type="hidden" id="modalMaquinaNS_hidden" name="numero_serie">
 						<input type="hidden" id="modalTipoMaquina_hidden" name="tipo_maquina">
 						<div class="form-control" id="containerMensaje" style="display: none; margin-bottom: 2vh;">
-							<label for="modalCodigoErrorSelect">Código de error <label style="color: red; display: inline;">*</label>
+							<label for="modalCodigoErrorSelect">Código de error <label class="obligatorio">*</label>
 							</label>
 							<select id="modalCodigoErrorSelect" name="codigo_error"></select>
 						</div>
 						<div class="form-control" id="containerFechaHora" style="display: none; margin-bottom: 2vh;">
 							<div style="display: flex; gap: 1vw;">
 								<div style="flex: 1;">
-									<label for="modalFecha">Fecha <label style="color: red; display: inline;">*</label>
+									<label for="modalFecha">Fecha <label class="obligatorio">*</label>
 									</label>
 									<input type="date" id="modalFecha">
 								</div>
 								<div style="flex: 1;">
-									<label for="modalHora">Hora <label style="color: red; display: inline;">*</label>
+									<label for="modalHora">Hora <label class="obligatorio">*</label>
 									</label>
 									<input type="time" id="modalHora">
 								</div>
@@ -451,7 +454,7 @@
 				</div>
 				<form id="formRegistroOrganismo">
 					<div class="form-control">
-						<label for="inputOrganismoCodigo">Código (4 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<label for="inputOrganismoCodigo">Código (4 dígitos) <label class="obligatorio">*</label></label>
 						<div class="form-row-inline">
 							<input type="text" id="inputOrganismoCodigo" name="codigo" maxlength="4" required>
 							<button type="button" class="btn-icon btn-search" title="Buscar Organismo">
@@ -463,7 +466,7 @@
 						</div>
 					</div>
 					<div class="form-control">
-						<label for="inputOrganismoNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+						<label for="inputOrganismoNombre">Nombre <label class="obligatorio">*</label></label>
 						<input type="text" id="inputOrganismoNombre" name="nombre" maxlength="150" required>
 					</div>
 					<div class="search-nav-group">
@@ -498,7 +501,7 @@
 				</div>
 				<form id="formRegistroCliente">
 					<div class="form-control">
-						<label for="inputClienteCodigo">Código (6 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<label for="inputClienteCodigo">Código (6 dígitos) <label class="obligatorio">*</label></label>
 						<div class="form-row-inline">
 							<input type="text" id="inputClienteCodigo" name="codigo" maxlength="6" required>
 							<button type="button" class="btn-icon btn-search" title="Buscar Cliente">
@@ -510,7 +513,7 @@
 						</div>
 					</div>
 					<div class="form-control">
-						<label for="inputClienteNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+						<label for="inputClienteNombre">Nombre <label class="obligatorio">*</label></label>
 						<input type="text" id="inputClienteNombre" name="nombre" maxlength="150" required>
 					</div>
 					<div class="search-nav-group">
@@ -545,7 +548,7 @@
 				</div>
 				<form id="formRegistroError">
 					<div class="form-control">
-						<label for="inputErrorCodigo">Código (4 dígitos) <label style="color: red; display: inline;">*</label></label>
+						<label for="inputErrorCodigo">Código (4 dígitos) <label class="obligatorio">*</label></label>
 						<div class="form-row-inline">
 							<input type="text" id="inputErrorCodigo" name="codigo" maxlength="4" required>
 							<button type="button" class="btn-icon btn-search" title="Buscar Error">
@@ -557,7 +560,7 @@
 						</div>
 					</div>
 					<div class="form-control">
-						<label for="inputErrorNombre">Descripción <label style="color: red; display: inline;">*</label></label>
+						<label for="inputErrorNombre">Descripción <label class="obligatorio">*</label></label>
 						<input type="text" id="inputErrorNombre" name="nombre" maxlength="150" required>
 					</div>
 					<div class="search-nav-group">
@@ -592,7 +595,7 @@
 				<form id="formRegistroPais">
 					<div class="form-grid">
 						<div class="form-control">
-							<label for="inputPaisCodigo">Código (3) <label style="color: red; display: inline;">*</label></label>
+							<label for="inputPaisCodigo">Código (3) <label class="obligatorio">*</label></label>
 							<div class="form-row-inline">
 								<input type="text" id="inputPaisCodigo" name="codigo" maxlength="3" required>
 								<button type="button" class="btn-icon btn-search" title="Buscar País">
@@ -604,16 +607,21 @@
 							</div>
 						</div>
 						<div class="form-control">
-							<label for="inputPaisNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+							<label for="inputPaisNombre">Nombre <label class="obligatorio">*</label></label>
 							<input type="text" id="inputPaisNombre" name="nombre" maxlength="50" required>
 						</div>
-						<div class="form-control">
-							<label for="inputPaisLongitud">Longitud</label>
-							<input type="number" id="inputPaisLongitud" name="longitud" step="0.0000001">
-						</div>
-						<div class="form-control">
-							<label for="inputPaisLatitud">Latitud</label>
-							<input type="number" id="inputPaisLatitud" name="latitud" step="0.0000001">
+						<div class="form-control" style="grid-column: span 2;">
+							<label>Coordenadas (Latitud, Longitud)</label>
+							<div class="input-group">
+								<input type="number" id="inputPaisLatitud" name="latitud" step="0.0000001" placeholder="Latitud" min="-90" max="90">
+								<input type="number" id="inputPaisLongitud" name="longitud" step="0.0000001" placeholder="Longitud" min="-180" max="180">
+								<button type="button" id="btnMapaPais" class="btn-icon-map" title="Seleccionar en el mapa">
+									<svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+										<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+										<circle cx="12" cy="10" r="3" />
+									</svg>
+								</button>
+							</div>
 						</div>
 					</div>
 					<div class="search-nav-group">
@@ -649,7 +657,7 @@
 				<form id="formRegistroProvincia">
 					<div class="form-grid">
 						<div class="form-control">
-							<label for="inputProvinciaCodigo">Código (10) <label style="color: red; display: inline;">*</label></label>
+							<label for="inputProvinciaCodigo">Código (10) <label class="obligatorio">*</label></label>
 							<div class="form-row-inline">
 								<input type="text" id="inputProvinciaCodigo" name="codigo" maxlength="10" required>
 								<button type="button" class="btn-icon btn-search" title="Buscar Provincia">
@@ -661,7 +669,7 @@
 							</div>
 						</div>
 						<div class="form-control">
-							<label for="inputProvinciaNombre">Nombre <label style="color: red; display: inline;">*</label></label>
+							<label for="inputProvinciaNombre">Nombre <label class="obligatorio">*</label></label>
 							<input type="text" id="inputProvinciaNombre" name="nombre" maxlength="50" required>
 						</div>
 						<div class="form-control">
@@ -677,14 +685,19 @@
 								<span id="labelProvinciaPais" class="helper-name"></span>
 							</div>
 						</div>
-						<br> <!-- Aqui haya un <br> -->
-						<div class="form-control">
-							<label for="inputProvinciaLongitud">Longitud</label>
-							<input type="number" id="inputProvinciaLongitud" name="longitud" step="0.0000001">
-						</div>
-						<div class="form-control">
-							<label for="inputProvinciaLatitud">Latitud</label>
-							<input type="number" id="inputProvinciaLatitud" name="latitud" step="0.0000001">
+							<br> <!-- Aqui haya un <br> -->
+						<div class="form-control" style="grid-column: span 2;">
+							<label>Coordenadas (Latitud, Longitud)</label>
+							<div class="input-group">
+								<input type="number" id="inputProvinciaLatitud" name="latitud" step="0.0000001" placeholder="Latitud" min="-90" max="90">
+								<input type="number" id="inputProvinciaLongitud" name="longitud" step="0.0000001" placeholder="Longitud" min="-180" max="180">
+								<button type="button" id="btnMapaProvincia" class="btn-icon-map" title="Seleccionar en el mapa">
+									<svg width="1.6vh" height="1.6vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+										<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+										<circle cx="12" cy="10" r="3" />
+									</svg>
+								</button>
+							</div>
 						</div>
 					</div>
 					<div class="search-nav-group">
@@ -700,6 +713,26 @@
 						<button type="submit" class="btn-primary">Guardar Provincia</button>
 					</div>
 				</form>
+			</div>
+		</div>
+
+		<!-- Modal para selector de Mapa -->
+		<div id="modalMapa" class="modal" style="display: none; z-index: 3000;">
+			<div class="modal-content" style="width: 70vw; height: 85vh;">
+				<div class="modal-header">
+					<h2>Seleccionar ubicación</h2>
+					<button type="button" id="cerrarMapaBtn" class="cerrar-btn">
+						<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+					</button>
+				</div>
+				<div class="input-group" style="margin-bottom: 1.5vh;">
+					<input type="text" id="mapSearchInput" placeholder="Buscar dirección, ciudad o lugar..." aria-label="Buscador de direcciones">
+					<button type="button" id="mapSearchBtn" class="btn-secondary" style="white-space: nowrap;">Buscar</button>
+				</div>
+				<div id="mapaContenedor" style="width: 100%; height: calc(100% - 110px); min-height: 350px; border-radius: var(--radius-sm); border: 1px solid var(--border);"></div>
+				<div class="botones" style="justify-content: center; margin-top: 2.5vh;">
+					<button type="button" id="confirmarUbicacionBtn" class="btn-primary">Confirmar Selección</button>
+				</div>
 			</div>
 		</div>
 	</body>

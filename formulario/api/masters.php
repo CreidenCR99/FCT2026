@@ -4,8 +4,6 @@
  * Endpoints para maestros: organismos, clientes, paises, provincias, errores.
  */
 
-require_once 'bootstrap.php';
-
 // Refuerzo de captura de anomalías globales (Errores PHP y Excepciones)
 set_error_handler(function($errno, $errstr, $errfile, $errline) {
     $msg = "ANOMALÍA PHP [$errno]: $errstr en $errfile:$errline | URI: " . ($_SERVER['REQUEST_URI'] ?? 'CLI');

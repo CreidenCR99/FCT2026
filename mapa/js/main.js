@@ -77,6 +77,10 @@ async function init() {
     if (e.key === "ArrowRight") navegarPais(1);
     if (e.key === "ArrowLeft") navegarPais(-1);
     if (e.key === "ArrowUp") enfocarPais(appState.paises[appState.paisActualIdx]);
+    if (e.code === "Space") {
+      e.preventDefault(); // Evitar scroll no deseado
+      togglePausa();
+    }
   });
 
   document.getElementById("btn-prev").onclick = () => navegarPais(-1);
@@ -84,7 +88,7 @@ async function init() {
   document.getElementById("btn-pause").onclick = togglePausa;
 
   appState.msNextData = CONFIG.MS_DATOS;
-  appState.msNextRotation = CONFIG.MS_ROTACION;
+  appState.msNextRotation = CONFIG.MS_ROTACION_DEFAULT; // Se ajustará al enfocar el primer país
 
   // --- Lógica de Inactividad del Mapa ---
   const resetInactivityTimer = () => {
@@ -131,8 +135,12 @@ async function init() {
   // Disparamos la animación de entrada del HUD
   document.body.classList.add('hud-visible');
 
+  // Ocultar pantalla de carga
+  const loadingScreen = document.getElementById('loading-screen');
+  if (loadingScreen) loadingScreen.classList.add('hidden');
+
   if (appState.paises.length > 0) {
-    const espIdx = appState.paises.findIndex(p => p.Nombre.toLowerCase() === "españa");
+    const espIdx = appState.paises.findIndex(p => String(p.Codigo) === "724");
     appState.paisActualIdx = espIdx !== -1 ? espIdx : 0;
     enfocarPais(appState.paises[appState.paisActualIdx]);
   }

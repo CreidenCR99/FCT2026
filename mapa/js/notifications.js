@@ -6,19 +6,26 @@ import { appState } from './state.js';
 import { CONFIG } from '../config.js';
 import { getCache } from './db.js';
 
-let swiperInstance = null;
-let stickyTimeout = null; // Usado para gestionar el timeout de alertas "pegajosas" (no implementado en este contexto)
+let animationId = null;
+let currentScrollY = 0;
+let lastTimestamp = 0;
+let isWaitingForRefresh = false;
+let isDragging = false;
+let startPointerY = 0;
+let startScrollY = 0;
+let velocityY = 0;
+let lastAlertsHash = "";
 
 /** @type {AudioContext|null} Contexto de audio para síntesis de sonidos. */
 let audioCtx = null;
+
 
 /** 
  * Mapa para rastrear cuándo se vio por primera vez una alerta (SN -> timestamp).
  * Permite gestionar efectos visuales de "novedad".
  * @type {Map<string, number>} 
  */
-const alertTimestamps = new Map(); 
-let lastAlertsHash = "";
+const alertTimestamps = new Map();
 
 /**
  * Inicializa el carrusel de alertas.
@@ -29,9 +36,11 @@ async function initAlertSystem() {
   const cached = await getCache('mapa_data').catch(() => null);
   if (cached && cached.alertas) {
     appState.lastAlerts = new Set(cached.alertas.map(a => a.sn));
-    renderCarousel(); // Renderizado inicial desde caché
+    appState.activeAlerts = cached.alertas;
+    renderCarousel();
   }
 }
+
 
 /**
  * Genera un sonido sintético basado en la configuración.
@@ -44,13 +53,13 @@ function playNotificationSound(status) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     const cfg = status === 'rojo' ? CONFIG.SOUNDS.TYPES.ROJO : CONFIG.SOUNDS.TYPES.NARANJA;
-    
+
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
 
     oscillator.type = cfg.type;
     oscillator.frequency.setValueAtTime(cfg.freq, audioCtx.currentTime);
-    
+
     gainNode.gain.setValueAtTime(CONFIG.SOUNDS.VOLUME, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + cfg.duration);
 
@@ -63,6 +72,26 @@ function playNotificationSound(status) {
     console.warn("Web Audio API not supported or blocked:", e);
   }
 }
+
+
+/**
+ * Genera un hash estable de las alertas ignorando el campo isRecent.
+ * Se usa para detectar si el contenido estructural ha cambiado realmente,
+ * evitando re-renders innecesarios que pausan el autoplay.
+ * @param {Array<Object>} alerts
+ * @returns {string}
+ */
+function getStructuralHash(alerts) {
+  return JSON.stringify(alerts.map(a => ({ 
+    sn: a.sn, 
+    status: a.status, 
+    nombre: a.nombre, 
+    provincia: a.provincia, 
+    codigoError: a.codigoError,
+    isRecent: a.isRecent // CRÍTICO: Incluir isRecent para que morphdom detecte cambios de estilo temporal
+  })));
+}
+
 
 /**
  * Sincroniza las alertas del servidor con el carrusel local.
@@ -85,7 +114,7 @@ export function syncAlerts(serverAlerts) {
 
   const now = Date.now();
   const currentSns = new Set(serverAlerts.map(a => a.sn));
-  
+
   // 2. Procesar alertas y determinar antigüedad
   const processedAlerts = sortedAlerts.map(alert => {
     // Si es la primera vez que vemos este SN, registramos el timestamp
@@ -103,88 +132,128 @@ export function syncAlerts(serverAlerts) {
       playNotificationSound(alert.status);
     }
   });
+
   // Limpieza del mapa de tiempos para alertas que ya no existen
   for (const sn of alertTimestamps.keys()) {
     if (!currentSns.has(sn)) alertTimestamps.delete(sn);
-  }
-  if (serverAlerts.length === 0) {
-    appState.isDummyAlertsMode = true;
   }
 
   // Actualizamos el historial para la próxima vuelta
   appState.lastAlerts = currentSns;
   appState.activeAlerts = processedAlerts;
-  
+
   renderCarousel();
+
+  if (isWaitingForRefresh) {
+    console.log("✅ [syncAlerts] Datos refrescados. Reanudando ticker.");
+    isWaitingForRefresh = false;
+    lastTimestamp = 0;
+    requestAnimationFrame(tick);
+  }
 }
 
 /**
- * Inicializa la instancia de Swiper para el carrusel.
- * Configura el modo ticker continuo y gestiona el loop manual infinito.
- * @returns {void}
+ * Motor de animación nativo (Ticker).
+ * @param {number} timestamp 
  */
-export function iniciarCarrusel() {
-  if (swiperInstance) return;
-
-  swiperInstance = new Swiper('#failure-feed', {
-    direction: 'vertical',
-    slidesPerView: 'auto',
-    spaceBetween: 8,
-    loop: false, 
-    speed: CONFIG.VELOCIDAD_CARRUSEL, // Velocidad muy lenta para movimiento continuo
-    autoplay: {
-      delay: 0, // Movimiento sin pausas
-      disableOnInteraction: false,
-    },
-    allowTouchMove: true,
-    on: {
-      setTranslate: function (swiper) {
-        // Evitamos recursividad si ya estamos reseteando
-        if (swiper.isResetting) return;
-
-        // En lugar de updateActiveIndex (pesado), calculamos el progreso de forma ligera.
-        // Teletransportamos solo cuando el primer elemento del buffer (índice = length) 
-        // llega al inicio del contenedor.
-        if (appState.activeAlerts.length > 0 && swiper.activeIndex >= appState.activeAlerts.length) {
-          swiper.isResetting = true;
-          swiper.autoplay.stop();
-          swiper.setTransition(0);
-          swiper.slideTo(0, 0);
-
-          // Restauramos el comportamiento de ticker lineal tras el salto
-          if (swiper.wrapperEl) swiper.wrapperEl.style.transitionTimingFunction = 'linear';
-          
-          setTimeout(() => {
-            if (appState.notificationsVisible) {
-              swiper.autoplay.start();
-            }
-            swiper.isResetting = false;
-          }, 50); // Pequeño margen para que el DOM se asiente
-        }
-      }
-    },
-    grabCursor: true
-  });
-
-  // Forzar CSS lineal para el efecto ticker continuo
-  if (swiperInstance && swiperInstance.wrapperEl) {
-    swiperInstance.wrapperEl.style.transitionTimingFunction = 'linear';
+function tick(timestamp) {
+  if (isWaitingForRefresh || !appState.notificationsVisible || isDragging) {
+    animationId = null;
+    return;
   }
 
-  let resizeTimer;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => {
-      renderCarousel();
-    }, 200);
-  });
-  initAlertSystem();
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  const delta = timestamp - lastTimestamp;
+  lastTimestamp = timestamp;
+
+  const wrapper = document.getElementById("failure-feed-wrapper");
+  const viewport = document.getElementById("failure-feed");
+  if (!wrapper || !viewport) return;
+
+  // Calculamos la velocidad: a menor valor en config, mayor incremento por frame
+  const speedFactor = 200 / (CONFIG.VELOCIDAD_CARRUSEL || 5000);
+  
+  // Sumamos el avance automático + la inercia (velocityY)
+  currentScrollY += (speedFactor * delta) + velocityY;
+
+  // Aplicamos fricción a la inercia (se reduce un 5% cada frame)
+  velocityY *= 0.95;
+  // Si la inercia es insignificante, la detenemos
+  if (Math.abs(velocityY) < 0.1) velocityY = 0;
+
+  // Lógica de bucle
+  const separator = wrapper.querySelector('.carrusel-item-separator');
+  if (separator && appState.activeAlerts.length > 10) {
+    if (currentScrollY >= separator.offsetTop) {
+      currentScrollY = 0;
+      isWaitingForRefresh = true;
+      console.log("⏸️ [ticker] Fin de ciclo. Esperando actualización de datos...");
+    }
+  } else {
+    // Sin repetición (<= 10 items): parar al final del contenido
+    const scrollLimit = Math.max(0, wrapper.scrollHeight - viewport.offsetHeight);
+    if (currentScrollY >= scrollLimit && scrollLimit > 0) {
+      currentScrollY = scrollLimit;
+      isWaitingForRefresh = true;
+    }
+  }
+
+  wrapper.style.transform = `translateY(-${currentScrollY}px)`;
+  animationId = requestAnimationFrame(tick);
 }
 
-/**
- * Renderiza las alertas visibles basadas en el espacio disponible.
- * Utiliza morphdom para una actualización eficiente sin interrumpir la animación de Swiper.
- */
+export function iniciarCarrusel() {
+  const viewport = document.getElementById("failure-feed");
+  const wrapper = document.getElementById("failure-feed-wrapper");
+  
+  // Añadir soporte para Scroll Manual
+  viewport?.addEventListener('wheel', (e) => {
+    if (isWaitingForRefresh && e.deltaY < 0) isWaitingForRefresh = false;
+    
+    currentScrollY += e.deltaY * 0.5; // Factor de sensibilidad
+    if (currentScrollY < 0) currentScrollY = 0;
+  }, { passive: true });
+
+  // Añadir soporte para Arrastre (Grab & Drag)
+  viewport?.addEventListener('pointerdown', (e) => {
+    isDragging = true;
+    startPointerY = e.pageY;
+    startScrollY = currentScrollY;
+    velocityY = 0; // Resetear inercia al tocar
+    if (wrapper) wrapper.style.cursor = 'grabbing';
+    viewport.setPointerCapture(e.pointerId);
+  });
+
+  viewport?.addEventListener('pointermove', (e) => {
+    if (!isDragging) return;
+    const dy = e.pageY - startPointerY;
+    const newScrollY = startScrollY - dy;
+    
+    // Calculamos la velocidad del arrastre actual para la inercia futura
+    velocityY = newScrollY - currentScrollY;
+    currentScrollY = newScrollY;
+    
+    if (currentScrollY < 0) currentScrollY = 0;
+    if (isWaitingForRefresh && dy > 0) isWaitingForRefresh = false;
+
+    if (wrapper) wrapper.style.transform = `translateY(-${currentScrollY}px)`;
+  });
+
+  const stopDragging = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    if (wrapper) wrapper.style.cursor = 'grab';
+    if (e.pointerId) viewport.releasePointerCapture(e.pointerId);
+    lastTimestamp = 0; 
+    requestAnimationFrame(tick); // Reanudar ticker
+  };
+
+  viewport?.addEventListener('pointerup', stopDragging);
+  viewport?.addEventListener('pointercancel', stopDragging);
+
+  initAlertSystem();
+  requestAnimationFrame(tick);
+}
 export function renderCarousel() {
   const feed = document.getElementById("failure-feed");
   const queueStatus = document.getElementById("queue-status");
@@ -193,129 +262,45 @@ export function renderCarousel() {
 
   if (!appState.notificationsVisible) {
     feed.style.opacity = "0";
-    if (swiperInstance) swiperInstance.autoplay.stop();
     if (queueStatus) queueStatus.textContent = "Mostrar notificaciones";
     return;
   }
 
-  if (queueStatus) queueStatus.textContent = "Ocultar notificaciones";
-
-  // Recalcular límites de espacio
   const uiOverlay = document.getElementById("ui-overlay");
-  const insetContainer = document.getElementById("inset-map-container");
   const queueContainer = document.getElementById("queue-status-container");
-  const isInsetActive = insetContainer && insetContainer.classList.contains('active');
-
-  // Reposicionar el botón de cola según el minimapa
-  if (queueContainer) {
-      queueContainer.style.bottom = isInsetActive ? '0.5vh' : '0.5vh';
-  }
-  
   const topLimit = uiOverlay ? uiOverlay.getBoundingClientRect().bottom + 0 : 0;
   const bottomLimit = queueContainer ? (queueContainer.getBoundingClientRect().top - 10) : (window.innerHeight - 20);
-  
+
+  if (queueStatus) queueStatus.textContent = "Ocultar notificaciones";
   feed.style.opacity = "1";
   feed.style.top = `${topLimit}px`;
   feed.style.height = `${bottomLimit - topLimit}px`;
 
-  /**
-   * Función auxiliar para garantizar que el movimiento continúe sin saltos.
-   * Reinicia el motor de autoplay de Swiper y asegura el timing lineal.
-   */
-  const restartContinuousMotion = () => {
-    if (swiperInstance && appState.notificationsVisible) {
-      swiperInstance.autoplay.stop();
-      swiperInstance.autoplay.start();
-      if (swiperInstance.wrapperEl) {
-        swiperInstance.wrapperEl.style.transitionTimingFunction = 'linear';
-      }
-    }
-  };
-
-  // Optimización: Si el contenido es idéntico al anterior, solo nos aseguramos de que el motor siga corriendo.
-  const currentHash = JSON.stringify(appState.activeAlerts);
-  if (currentHash === lastAlertsHash) {
-    restartContinuousMotion();
-    return;
-  }
+  const currentHash = getStructuralHash(appState.activeAlerts);
+  if (currentHash === lastAlertsHash) return;
   lastAlertsHash = currentHash;
 
-  // NOTA: La combinación de Swiper Loop + Morphdom es compleja porque Swiper genera clones 
-  // que Morphdom no conoce. Detenemos el autoplay antes de manipular el DOM.
-  if (swiperInstance) swiperInstance.autoplay.stop();
-
-  // Si el swiper ya estaba en el área de buffer o separador, reseteamos a 0 
-  // antes del morph para evitar saltos visuales extraños con el nuevo contenido.
-  if (swiperInstance && (swiperInstance.activeIndex) >= appState.activeAlerts.length) {
-    swiperInstance.slideTo(0, 0);
-  }
-  const currentTranslate = swiperInstance ? swiperInstance.getTranslate() : 0;
-
-  // 2. Generar el HTML: Lista real + buffer de los 7 primeros
   let alertsToRender = [];
-  const shouldShowDummy = appState.activeAlerts.length === 0;
-  appState.isDummyAlertsMode = shouldShowDummy; // Actualizar el flag de estado
-
-  if (shouldShowDummy) {
-    // Generar 7 alertas de relleno
-    for (let i = 0; i < 7; i++) {
-      alertsToRender.push({
-        sn: `dummy-${i}`,
-        status: 'gris', // Puedes usar un estado específico para las dummy alerts
-        nombre: 'Esperando alertas...',
-        provincia: 'SIN DATOS',
-        codigoError: 'N/A',
-        isRecent: false
-      });
+  if (appState.activeAlerts.length === 0) {
+    for (let i = 0; i < CONFIG.NOTIFICATIONS.LOOP_BUFFER_SIZE; i++) {
+      alertsToRender.push({ sn: `dummy-${i}`, status: 'gris', nombre: 'Esperando alertas...', provincia: 'SIN DATOS', codigoError: 'N/A', isRecent: false });
     }
   } else {
     alertsToRender = [...appState.activeAlerts];
+    if (alertsToRender.length > 10) {
+      alertsToRender.push({ isSeparator: true });
+      alertsToRender.push(...alertsToRender.slice(0, CONFIG.NOTIFICATIONS.LOOP_BUFFER_SIZE));
+    }
   }
 
-  if (alertsToRender.length > 0) { // Solo añadir buffer si hay elementos para mostrar
-    // Añadimos los 7 primeros al final para que el salto sea invisible
-    alertsToRender.push(...alertsToRender.slice(0, Math.min(7, alertsToRender.length)));
-  }
+  const html = alertsToRender.map(alerta => {
+    if (alerta.isSeparator) return `<div class="carrusel-item-separator"><span class="capsula-gris">Nueva rotación</span></div>`;
+    return `<div class="fail-note status-${alerta.status} ${alerta.isRecent ? 'new-alert-glow' : ''}"><div class="fail-content"><strong>${alerta.status === "rojo" ? "CONEXIÓN" : "ERROR"}:</strong> ${alerta.nombre}<br><small>${alerta.provincia ? alerta.provincia.toUpperCase() : ''} - ${alerta.codigoError}</small></div></div>`;
+  }).join("");
 
-  const html = alertsToRender.map(alerta => `
-    <div class="swiper-slide fail-note status-${alerta.status} ${alerta.isRecent ? 'recent-alert-glow' : ''}">
-      <div class="fail-content">
-        <strong>${alerta.status === "rojo" ? "CONEXIÓN" : "ERROR"}:</strong> ${alerta.nombre}
-        <br><small>${alerta.provincia ? alerta.provincia.toUpperCase() : ''} - ${alerta.codigoError}</small>
-      </div>
-    </div>
-  `).join("");
-
-  // 3. Usar morphdom para actualizar solo lo necesario sin romper Swiper
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-
-  window.morphdom(wrapper, tempDiv, {
-    childrenOnly: true,
-    onBeforeElUpdated: (fromEl, toEl) => {
-      // Solo procesar si son elementos (evita errores con nodos de texto)
-      if (fromEl.nodeType !== 1) return true;
-      if (fromEl.isEqualNode(toEl)) return false;
-      
-      // Preservar clases de estado de Swiper
-      const swiperClasses = ["swiper-slide-active", "swiper-slide-next", "swiper-slide-prev", "swiper-slide-duplicate"];
-      swiperClasses.forEach(cls => {
-        if (fromEl.classList.contains(cls)) toEl.classList.add(cls);
-      });
-      return true;
-    }
-  });
-
-  // 4. Actualizar Swiper y reiniciar Autoplay si no hay novedades fijadas
-  if (swiperInstance) {
-    swiperInstance.update();
-    
-    // Restauramos siempre la posición para que el movimiento sea infinito y sin saltos
-    swiperInstance.setTranslate(currentTranslate);
-
-    // Forzamos el reinicio tras un breve delay para que el DOM se asiente
-    setTimeout(restartContinuousMotion, 50);
-  }
+  window.morphdom(wrapper, tempDiv, { childrenOnly: true });
 }
 
 // Manejador para Ocultar/Mostrar
@@ -323,26 +308,5 @@ document.addEventListener('click', (e) => {
   if (e.target.id === "queue-status") {
     appState.notificationsVisible = !appState.notificationsVisible;
     renderCarousel();
-  }
-});
-
-/**
- * Limpiador de seguridad: Elimina notificaciones que se quedaron "a medias"
- * durante una transición al cambiar de pestaña.
- */
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    const stuckNotes = document.querySelectorAll('.fail-note.leaving');
-    stuckNotes.forEach(note => note.remove());
-
-    // Forzar reinicio de Swiper al volver a la página
-    if (swiperInstance) {
-      swiperInstance.update();
-      if (appState.notificationsVisible && !swiperInstance.autoplay.running) {
-        swiperInstance.autoplay.start();
-      }
-    }
-  } else {
-    if (swiperInstance) swiperInstance.autoplay.stop();
   }
 });

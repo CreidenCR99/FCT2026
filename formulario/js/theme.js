@@ -30,12 +30,12 @@ themeToggle.addEventListener("click", () => {
  * @returns {void}
  */
 export function updateThemeIcon() {
-	const logos = document.querySelectorAll('img[src*="LOGO_SicoLares"]');
+	const logos = document.querySelectorAll('img[src*="../LOGO_SicoLares"]');
 	logos.forEach(img => {
 		if (currentTheme === "dark") {
-			img.src = img.src.replace("LOGO_SicoLares.png", "LOGO_SicoLares_Negativo.png");
+			img.src = img.src.replace("../LOGO_SicoLares.png", "../LOGO_SicoLares_Negativo.png");
 		} else {
-			img.src = img.src.replace("LOGO_SicoLares_Negativo.png", "LOGO_SicoLares.png");
+			img.src = img.src.replace("../LOGO_SicoLares_Negativo.png", "../LOGO_SicoLares.png");
 		}
 	});
 

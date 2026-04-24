@@ -16,7 +16,47 @@ body, html, #map {
 }
 
 /* Estilo del Popup de Leaflet */
+.leaflet-popup {
+    margin-top: 10px;
+}
 .leaflet-popup-content-wrapper {
     background: #1c1c1e; color: #fff; border-radius: 8px;
 }
 .leaflet-popup-tip { background: #1c1c1e; }
+
+/* --- Pantalla de Carga --- */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 99999;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+    color: var(--text);
+    font-family: inherit;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.loader-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary, --primary-bg);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

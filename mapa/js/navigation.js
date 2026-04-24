@@ -11,12 +11,22 @@ import { renderCarousel } from './notifications.js';
 
 /**
  * Determina el nivel de zoom óptimo para cada país.
- * @param {string} nombre - Nombre del país.
+ * @param {Object} pais - Objeto con los datos del país.
  * @returns {number} Nivel de zoom (6.5 por defecto).
  */
-const getZoomPorPais = (nombre) => {
-  return CONFIG.ZOOM_PAISES[nombre.toLowerCase()] || CONFIG.ZOOM_DEFAULT;
+const getZoomPorPais = (pais) => {
+  return CONFIG.ZOOM_PAISES[String(pais.Codigo)] || CONFIG.ZOOM_DEFAULT;
 };
+
+/**
+ * Determina el tiempo de rotación para un país específico.
+ * @param {Object} pais - Objeto con los datos del país.
+ * @returns {number} Tiempo de rotación en milisegundos.
+ */
+const getMsRotacionPorPais = (pais) => {
+  return CONFIG.MS_ROTACION_PAISES[String(pais.Codigo)] || CONFIG.MS_ROTACION_DEFAULT;
+};
+
 
 // --- Gestión de Navegación ---
 
@@ -30,7 +40,7 @@ export function navegarPais(dir) {
 
   appState.paisActualIdx = (appState.paisActualIdx + dir + appState.paises.length) % appState.paises.length;
   const pais = appState.paises[appState.paisActualIdx];
-  appState.msNextRotation = CONFIG.MS_ROTACION;
+  appState.msNextRotation = getMsRotacionPorPais(pais);
   enfocarPais(pais);
 }
 
@@ -42,7 +52,7 @@ export function togglePausa() {
   appState.estaPausado = !appState.estaPausado;
   const btn = document.getElementById("btn-pause");
   btn.textContent = appState.estaPausado ? "▶" : "⏸";
-  if (!appState.estaPausado) appState.msNextRotation = CONFIG.MS_ROTACION;
+  if (!appState.estaPausado) appState.msNextRotation = getMsRotacionPorPais(appState.paises[appState.paisActualIdx]);
 }
 
 /**
@@ -56,7 +66,7 @@ export function enfocarPais(pais) {
   actualizarStatsUI();
 
   const insetContainer = document.getElementById("inset-map-container");
-  const config = INSET_VIEWS[pais.Nombre.toLowerCase()];
+  const config = INSET_VIEWS[String(pais.Codigo)];
   
   if (config) {
     insetContainer.classList.add('active');
@@ -66,7 +76,7 @@ export function enfocarPais(pais) {
     insetContainer.classList.remove('active');
   }
 
-  const zoom = getZoomPorPais(pais.Nombre);
+  const zoom = getZoomPorPais(pais);
 
   appState.isProgrammaticMove = true;
   appState.map.flyTo([pais.Latitud, pais.Longitud], zoom, {

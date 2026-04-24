@@ -2,7 +2,7 @@
 /**
  * SicoLares Mapa API - Entry Point
  */
-require_once __DIR__ . "/bootstrap.php";
+require_once __DIR__ . "../../../bootstrap.php";
 
 $modo = trim($_GET["modo"] ?? "");
 
