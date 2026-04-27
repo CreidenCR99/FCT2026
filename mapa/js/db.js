@@ -1,6 +1,8 @@
 /**
- * Módulo: db.js
- * Gestión de persistencia local mediante IndexedDB para carga instantánea.
+ * @module db.js
+ * @description Gestión de persistencia local mediante IndexedDB.
+ * Permite almacenar y recuperar datos (países, provincias, alertas) para una
+ * carga instantánea de la aplicación (Offline-first approach) antes de la sincronización.
  */
 
 const DB_NAME = 'SicoLaresMapDB';

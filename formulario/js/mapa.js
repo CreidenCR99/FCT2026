@@ -7,6 +7,10 @@ let map = null;
 let marker = null;
 let currentCallback = null;
 
+/**
+ * Inicializa el componente de mapa (Leaflet) y configura los eventos de búsqueda y confirmación.
+ * Solo se ejecuta una vez al inicio.
+ */
 export function initMapPicker() {
     const modal = document.getElementById('modalMapa');
     const container = document.getElementById('mapaContenedor');
@@ -75,6 +79,12 @@ function updateMarker(lat, lng) {
     }
 }
 
+/**
+ * Abre el selector de mapa interactivo para obtener coordenadas.
+ * @param {Function} callback - Función que se llama al confirmar la ubicación. Recibe (lat, lng).
+ * @param {string|number|null} [initialLat] - Latitud inicial para posicionar el marcador.
+ * @param {string|number|null} [initialLng] - Longitud inicial para posicionar el marcador.
+ */
 export function abrirMapaPicker(callback, initialLat = null, initialLng = null) {
     const modal = document.getElementById('modalMapa');
     const searchInput = document.getElementById('mapSearchInput');

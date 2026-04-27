@@ -1,5 +1,8 @@
 /**
- * Módulo: ui.js
+ * @module ui.js
+ * @description Orquesta los componentes visuales de la aplicación.
+ * Incluye la lógica de renderizado de KPIs con animaciones numéricas, gestión de modales
+ * para errores y logs, skeletons de carga y barras de progreso.
  */
 import { CONFIG } from '../config.js';
 import { appState, INTERVALO_MS } from './state.js';
@@ -237,6 +240,12 @@ function renderContenidoModal() {
 		countEl.textContent = `${appState.currentModalLogIndex + 1} / ${numErrores}`;
 	}
 
+	// Mostrar botón "Nuevo Error" solo si estamos viendo un error existente
+	const btnNuevo = document.getElementById("modalNuevoErrorBtn");
+	if (btnNuevo) {
+		btnNuevo.style.display = isNew ? "none" : "inline-flex";
+	}
+
 	document.getElementById("modalMaquinaDesc").textContent = machine.Descripcion;
 	document.getElementById("modalMaquinaSN").textContent = machine.NumeroSerie;
 	document.getElementById("modalMaquinaNS_hidden").value = machine.NumeroSerie;
@@ -318,11 +327,11 @@ export function abrirModalError(errorObj) {
 
 	// Preparar lista de errores para navegación (solo errores activos de esta máquina)
 	const activeLogs = (errorObj.maquina.Logs || []).filter(l => !esFalso(l.Activo));
-	// Si el log que abrimos es histórico (no activo) o nuevo, lo incluimos en la lista temporal
-	if (errorObj.log.ID && !activeLogs.some(l => l.ID === errorObj.log.ID)) {
+	// Si el log que abrimos es histórico o NUEVO (sin ID), lo incluimos en la lista temporal al principio
+	if (!errorObj.log.ID || !activeLogs.some(l => l.ID === errorObj.log.ID)) {
 		activeLogs.unshift(errorObj.log);
 	}
-	appState.currentModalLogs = activeLogs.length > 0 ? activeLogs : [errorObj.log];
+	appState.currentModalLogs = activeLogs;
 	appState.currentModalLogIndex = appState.currentModalLogs.findIndex(l => l.ID === errorObj.log.ID);
 	if (appState.currentModalLogIndex === -1) appState.currentModalLogIndex = 0;
 
@@ -461,14 +470,14 @@ export function detenerProgressBar() {
 
 // ---- Modal Logic ----
 
-dom.cerrarModalBtn.addEventListener("click", () => {
-	cerrarModal();
-});
-dom.cancelarEdicionBtn.addEventListener("click", () => {
-	cerrarModal();
-});
-window.addEventListener("click", e => {
-	if (e.target === dom.modalLog) cerrarModal();
+// Delegación de eventos para cerrar el modal (X, botón Cancelar o click fuera)
+dom.modalLog.addEventListener("click", e => {
+	const shouldClose = e.target === dom.modalLog || 
+						e.target.closest("#cerrarModalBtn") || 
+						e.target.closest("#cancelarEdicionBtn");
+	if (shouldClose) {
+		cerrarModal();
+	}
 });
 
 /**
@@ -527,6 +536,18 @@ document.getElementById("modalLogBtnLast")?.addEventListener("click", () => {
 	renderContenidoModal();
 });
 
+// Listener para el botón "Nuevo Error" dentro del modal de edición
+dom.modalNuevoErrorBtn?.addEventListener("click", () => {
+	if (!appState.currentModalData) return;
+	const machine = appState.datosTabla.find(m => m.NumeroSerie === appState.currentModalData.numeroSerie);
+	if (machine) {
+		abrirModalError({
+			maquina: machine,
+			log: { NumeroSerie: machine.NumeroSerie } // Esto disparará isNew en renderContenidoModal
+		});
+	}
+});
+
 // Atajos de teclado para navegación en el modal de logs
 document.addEventListener("keydown", (e) => {
 	if (dom.modalLog.style.display === "flex") {
@@ -564,10 +585,13 @@ dom.backToTopBtn.addEventListener("click", () => {
 });
 
 dom.floatingLogo.addEventListener("click", () => {
-	window.scrollTo({
-		top: 0,
-		behavior: "smooth"
-	});
+	// Navegación cruzada: Si se hace click en el logo, volvemos al Mapa
+	window.location.href = "../mapa/";
+});
+
+// También para el logo principal en la cabecera
+document.querySelector(".page-logo")?.addEventListener("click", () => {
+	window.location.href = "../mapa/";
 });
 
 dom.formEdicionLog.addEventListener("submit", async (e) => {
@@ -608,10 +632,11 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 	const isActivo = document.getElementById("modalEstadoError").checked;
 	formData.set("resultado", isActivo ? "0" : "1");
 
-	// Procesamiento automático de observaciones con timestamp [DD/MM/YYYY, HH:MM]
+	// Procesamiento inteligente de observaciones con timestamp [DD/MM/YYYY, HH:MM]
 	const log = appState.currentModalLogs[appState.currentModalLogIndex];
 	const originalObs = (log.Observaciones || "").trim();
-	let finalObs = document.getElementById("modalObservaciones").value.trim();
+	const finalObsRaw = document.getElementById("modalObservaciones").value.trim();
+	let finalObs = finalObsRaw;
 
 	if (finalObs !== originalObs && finalObs !== "") {
 		const now = new Date();
@@ -620,15 +645,24 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 		const y = now.getFullYear();
 		const h = String(now.getHours()).padStart(2, '0');
 		const mi = String(now.getMinutes()).padStart(2, '0');
-		const prefix = `[${d}/${mo}/${y}, ${h}:${mi}] `;
+		const timestamp = `[${d}/${mo}/${y}, ${h}:${mi}]`;
 
 		if (originalObs === "") {
-			finalObs = prefix + finalObs;
+			// Si no había nada, ponemos el timestamp al inicio
+			finalObs = `${timestamp} ${finalObs}`;
 		} else if (finalObs.startsWith(originalObs)) {
-			const newPart = finalObs.substring(originalObs.length).trim();
-			if (newPart) finalObs = originalObs + "\n" + prefix + newPart;
+			// Si el usuario ha añadido texto al final del existente
+			const addedPart = finalObs.substring(originalObs.length).trim();
+			if (addedPart) {
+				// Solo añadimos timestamp si la parte nueva NO tiene ya uno similar (evitar duplicados)
+				if (!addedPart.startsWith('[')) {
+					finalObs = `${originalObs}\n${timestamp} ${addedPart}`;
+				}
+			}
 		} else {
-			finalObs = prefix + finalObs;
+			// Si el usuario ha modificado el historial previo, respetamos su edición
+			// y añadimos una nota de "Editado" al final con el nuevo timestamp
+			finalObs = `${finalObs}\n${timestamp} (Contenido anterior modificado)`;
 		}
 		formData.set("observaciones", finalObs);
 	}
@@ -636,7 +670,11 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 	const btnSubmit = dom.formEdicionLog.querySelector('button[type="submit"]');
 
 	try {
-		btnSubmit.disabled = true;
+		if (btnSubmit) {
+			btnSubmit.disabled = true;
+			btnSubmit.dataset.originalText = btnSubmit.innerHTML;
+			btnSubmit.innerHTML = "Enviando...";
+		}
 		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=${modo}`, {
 			method: "POST",
 			body: formData
@@ -667,7 +705,10 @@ dom.formEdicionLog.addEventListener("submit", async (e) => {
 			target: document.fullscreenElement || document.body
 		});
 	} finally {
-		btnSubmit.disabled = false;
+		if (btnSubmit) {
+			btnSubmit.disabled = false;
+			btnSubmit.innerHTML = btnSubmit.dataset.originalText || "Enviar";
+		}
 	}
 });
 

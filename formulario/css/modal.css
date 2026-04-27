@@ -23,37 +23,76 @@
 
 .registro-maestro-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 15px;
-  padding: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2vh;
+  padding: 1vh 0;
 }
 
-.registro-maestro-options .btn-secondary {
-  height: 100px;
+.registro-maestro-options .option-card {
+  height: 12vh;
+  min-height: 100px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1.5vh;
   font-weight: 600;
-  border-radius: 12px;
-  transition: transform 0.2s, background 0.2s;
+  font-size: 1.8vh;
+  border-radius: var(--radius-md);
+  background: var(--surface-offset);
+  border: 0.2vh solid var(--border);
+  color: var(--text);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
 }
 
-.registro-maestro-options .btn-secondary:hover {
-  transform: translateY(-3px);
-  background: var(--primary);
-  color: white;
+.registro-maestro-options .option-card svg {
+  color: var(--primary);
+  transition: transform 0.2s, color 0.2s;
+}
+
+.registro-maestro-options .option-card:hover {
+  transform: translateY(-0.6vh) scale(1.04);
+  background: var(--primary-bg);
+  color: var(--primary);
   border-color: var(--primary);
+  box-shadow: 0 1vh 2.5vh rgba(37, 99, 235, 0.2);
+}
+
+.registro-maestro-options .option-card:active {
+  transform: translateY(-0.2vh) scale(0.96);
+  box-shadow: var(--shadow-sm);
+}
+
+.registro-maestro-options .option-card:hover svg {
+  transform: scale(1.2) rotate(-5deg);
 }
 
 .modal-content {
   background: var(--surface);
-  width: 45vw;
-  max-height: 90vh;
+  width: 50vw;
+  max-height: 98vh;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 4vh 2.5vw;
-  animation: entradaSuave 0.3s ease-out;
+  box-shadow: var(--shadow-lg);
+  padding: 2.5vh 2.5vw;
+  animation: modalPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.modal-content::-webkit-scrollbar {
+  display: none;
+}
+
+.modal-sm { width: 35vw; }
+.modal-lg { width: 70vw; }
+
+@keyframes modalPopIn {
+  0% { transform: scale(0.85); opacity: 0; }
+  70% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 /* Validación en tiempo real - Éxito */
@@ -123,9 +162,9 @@ textarea:not(:placeholder-shown):valid {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3vh;
+  margin-bottom: 2vh;
   border-bottom: 1px solid var(--border-soft);
-  padding-bottom: 1.5vh;
+  padding-bottom: 1vh;
 }
 
 .modal-header h2 {
@@ -135,11 +174,11 @@ textarea:not(:placeholder-shown):valid {
 
 .info-maquina {
   background: var(--surface-offset);
-  padding: 2vh 1.5vw;
+  padding: 1.5vh 1.5vw;
   border-radius: var(--radius-md);
-  margin-bottom: 3vh;
-  font-size: 1.8vh;
-  line-height: 2vh;
+  margin-bottom: 2vh;
+  font-size: 1.7vh;
+  line-height: 1.8vh;
 }
 .info-maquina p {
   margin: 0.6vh 0;
@@ -147,19 +186,20 @@ textarea:not(:placeholder-shown):valid {
 
 /* Ajustes de controles dentro del modal para usar vh/vw */
 
-.modal-content .form-control label {
-  font-size: 1.7vh;
-  margin-bottom: 0.8vh;
+.modal-content .form-control {
+  margin-bottom: 1.5vh;
 }
-
+.modal-content .form-control label {
+  font-size: 1.6vh;
+  margin-bottom: 0.5vh;
+}
 .modal-content .form-control input,
 .modal-content .form-control select,
 .modal-content .form-control textarea {
-  padding: 1.2vh 1vw;
-  font-size: 1.8vh;
+  padding: 1vh 0.8vw;
+  font-size: 1.7vh;
 }
-
 .modal-content .botones {
-  margin-top: 3vh;
+  margin-top: 2.5vh;
   gap: 1vw;
 }

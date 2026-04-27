@@ -56,7 +56,3 @@ body, html, #map {
     animation: spin 1s linear infinite;
     margin-bottom: 20px;
 }
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}

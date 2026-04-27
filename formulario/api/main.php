@@ -1,8 +1,11 @@
 <?php
 /**
- * SicoLares API - Entry Point
+ * @file main.php
+ * @description Controlador frontal (Router) para la API del Formulario.
+ * Distribuye las peticiones hacia los módulos específicos de máquinas, logs o maestros
+ * tras inicializar el entorno mediante el bootstrap.
  */
-require_once __DIR__ . "../../../bootstrap.php";
+require_once __DIR__ . "/../../core/bootstrap.php";
 
 // Limpiamos el modo de posibles espacios o saltos de línea accidentales
 $modo = trim($_GET["modo"] ?? "");
@@ -44,3 +47,4 @@ switch ($modo) {
         echo json_encode(["error" => "Modo no reconocido"]);
         break;
 }
+?>

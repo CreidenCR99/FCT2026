@@ -4,9 +4,16 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<!--Favicon en jpg-->
-		<link rel="icon" type="image/x-icon" href="../favicon.jpg" />
+		<link rel="icon" type="image/x-icon" href="../assets/favicon.jpg" />
 		<title>SicoLares - Control de máquinas</title>
+        
+        <!-- Google Fonts: Inter -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 		<link rel="stylesheet" href="css/main.css" />
+		<link rel="stylesheet" href="../core/toasts.css" />
 		<!-- Librerías de utilidad -->
 		<script src="https://unpkg.com/morphdom@2.7.4/dist/morphdom-umd.min.js"></script>
 		<!-- Leaflet Map -->
@@ -20,12 +27,12 @@
 		<main id="contenido-principal">
 			<!-- Logo flotante al hacer scroll -->
 			<div id="floatingLogo" class="floating-logo" aria-hidden="true">
-				<img src="../LOGO_SicoLares.png" alt="SicoLares">
+				<img src="../assets/LOGO_SicoLares.png" alt="SicoLares">
 			</div>
 			<form id="form" novalidate>
 				<div class="form-header">
 					<h1>
-						<img class="page-logo" src="../LOGO_SicoLares.png" alt="Logo SicoLares"> - Control de máquinas
+						<img class="page-logo" src="../assets/LOGO_SicoLares.png" alt="Logo SicoLares"> - Control de máquinas
 					</h1>
 					<button type="button" id="themeToggle" class="btn-icon" aria-label="Cambiar a modo oscuro"></button>
 				</div>
@@ -78,7 +85,7 @@
 				<!-- Cabecera de la tabla -->
 				<div class="tabla-header">
 					<div class="logo-fullscreen" aria-hidden="true">
-						<img src="../LOGO_SicoLares.png" alt="Logo SicoLares">
+						<img src="../assets/LOGO_SicoLares.png" alt="Logo SicoLares">
 					</div>
 					<h2 id="tabla-titulo">Resultados</h2>
 					<div id="indicadorReproduccion" class="indicador-reproduccion" aria-live="polite"></div>
@@ -118,10 +125,14 @@
 					<div class="modal-header">
 						<h2 id="mmTitle">Alta / Mantenimiento de Máquina</h2>
 						<div class="header-actions">
-							<button type="button" id="mmBtnBack" class="btn-back btn-small btn-secondary"></button>
-							<button type="button" id="cerrarMMBtn" class="cerrar-btn">
-								<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-									<path d="M18 6L6 18M6 6l12 12" />
+							<button type="button" id="mmBtnBack" class="btn-back btn-small btn-secondary">
+								<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+								<span>Volver</span>
+							</button>
+							<button type="button" id="cerrarMMBtn" class="cerrar-btn" aria-label="Cerrar modal">
+								<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+									<line x1="18" y1="6" x2="6" y2="18"></line>
+									<line x1="6" y1="6" x2="18" y2="18"></line>
 								</svg>
 							</button>
 						</div>
@@ -253,9 +264,10 @@
 				<div class="modal-content" style="width: 40vw;">
 					<div class="modal-header">
 						<h2>Maestro de Búsquedas</h2>
-						<button type="button" id="cerrarBusquedaBtn" class="btn-icon">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
+						<button type="button" id="cerrarBusquedaBtn" class="cerrar-btn" aria-label="Cerrar búsqueda">
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
 							</svg>
 						</button>
 					</div>
@@ -331,11 +343,20 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<h2 id="modalTitle">Detalles del Error</h2>
-					<button type="button" id="cerrarModalBtn" class="btn-icon" aria-label="Cerrar modal">
-						<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-							<path d="M18 6L6 18M6 6l12 12" />
-						</svg>
-					</button>
+					<div class="header-actions">
+						<button type="button" id="modalNuevoErrorBtn" class="btn-primary btn-small" style="display: none;" title="Registrar otro error para esta máquina">
+							<svg width="1.4vh" height="1.4vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="margin-right: 0.5vw;">
+								<path d="M12 5v14M5 12h14"/>
+							</svg>
+							Nuevo Error
+						</button>
+						<button type="button" id="cerrarModalBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
+							</svg>
+						</button>
+					</div>
 				</div>
 				<div class="modal-body">
 					<div class="info-maquina">
@@ -418,22 +439,42 @@
 			<div class="modal-content modal-sm">
 				<div class="modal-header">
 					<h2 id="modalRegistroMaestroTitle">¿Qué desea registrar?</h2>
+					<p class="modal-subtitle" style="color: var(--text-muted); font-size: 1.6vh; margin-top: 0.5vh;">Seleccione el tipo de entidad que desea añadir o gestionar en el sistema.</p>
 					<div class="header-actions">
-						<button type="button" id="cerrarRegistroMaestroBtn" class="cerrar-btn">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
+						<button type="button" id="cerrarRegistroMaestroBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
 							</svg>
 						</button>
 					</div>
 				</div>
 				<div class="modal-body">
 					<div class="registro-maestro-options">
-						<button class="btn-secondary" id="btnRegistroMaquina">Máquina</button>
-						<button class="btn-secondary" id="btnRegistroOrganismo">Organismo</button>
-						<button class="btn-secondary" id="btnRegistroProvincia">Provincia</button>
-						<button class="btn-secondary" id="btnRegistroCliente">Cliente</button>
-						<button class="btn-secondary" id="btnRegistroError">Error</button>
-						<button class="btn-secondary" id="btnRegistroPais">País</button>
+						<button class="btn-secondary option-card" id="btnRegistroMaquina">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"/><rect x="2" y="14" width="20" height="8" rx="2" ry="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+							<span>Máquina</span>
+						</button>
+						<button class="btn-secondary option-card" id="btnRegistroOrganismo">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M9 8h1"/><path d="M9 12h1"/><path d="M9 16h1"/><path d="M14 8h1"/><path d="M14 12h1"/><path d="M14 16h1"/><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+							<span>Organismo</span>
+						</button>
+						<button class="btn-secondary option-card" id="btnRegistroProvincia">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+							<span>Provincia</span>
+						</button>
+						<button class="btn-secondary option-card" id="btnRegistroCliente">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+							<span>Cliente</span>
+						</button>
+						<button class="btn-secondary option-card" id="btnRegistroError">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+							<span>Error</span>
+						</button>
+						<button class="btn-secondary option-card" id="btnRegistroPais">
+							<svg width="3.5vh" height="3.5vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+							<span>País</span>
+						</button>
 					</div>
 				</div>
 			</div>
@@ -444,11 +485,15 @@
 				<div class="modal-header">
 					<h2>Registrar Organismo</h2>
 					<div class="header-actions">
-						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" class="btn-back btn-small" aria-label="Volver">
+							<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+							<span>Volver</span>
+						</button>
 						<button type="button" id="cerrarRegistroOrganismoBtn" class="cerrar-btn" aria-label="Cerrar modal">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
 						</button>
 					</div>
 				</div>
@@ -491,11 +536,15 @@
 				<div class="modal-header">
 					<h2>Registrar Cliente</h2>
 					<div class="header-actions">
-						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" class="btn-back btn-small" aria-label="Volver">
+							<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+							<span>Volver</span>
+						</button>
 						<button type="button" id="cerrarRegistroClienteBtn" class="cerrar-btn" aria-label="Cerrar modal">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
 						</button>
 					</div>
 				</div>
@@ -538,11 +587,15 @@
 				<div class="modal-header">
 					<h2>Registrar Error</h2>
 					<div class="header-actions">
-						<button type="button" class="btn-back btn-small"></button>
+						<button type="button" class="btn-back btn-small" aria-label="Volver">
+							<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+							<span>Volver</span>
+						</button>
 						<button type="button" id="cerrarRegistroErrorBtn" class="cerrar-btn" aria-label="Cerrar modal">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
 						</button>
 					</div>
 				</div>
@@ -584,11 +637,15 @@
 				<div class="modal-header">
 					<h2>Registrar País</h2>
 					<div class="header-actions">
-						<button type="button" class="btn-back btn-small"></button>
-						<button type="button" id="cerrarRegistroPaisBtn" class="cerrar-btn">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
-							</svg>
+						<button type="button" class="btn-back btn-small" aria-label="Volver">
+							<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+							<span>Volver</span>
+						</button>
+						<button type="button" id="cerrarRegistroPaisBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+							<line x1="18" y1="6" x2="6" y2="18"></line>
+							<line x1="6" y1="6" x2="18" y2="18"></line>
+						</svg>
 						</button>
 					</div>
 				</div>
@@ -646,10 +703,14 @@
 				<div class="modal-header">
 					<h2>Registrar Provincia</h2>
 					<div class="header-actions">
-						<button type="button" class="btn-back btn-small"></button>
-						<button type="button" id="cerrarRegistroProvinciaBtn" class="cerrar-btn">
-							<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-								<path d="M18 6L6 18M6 6l12 12" />
+						<button type="button" class="btn-back btn-small" aria-label="Volver">
+							<svg width="1.8vh" height="1.8vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+							<span>Volver</span>
+						</button>
+						<button type="button" id="cerrarRegistroProvinciaBtn" class="cerrar-btn" aria-label="Cerrar modal">
+							<svg width="2.2vh" height="2.2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;">
+								<line x1="18" y1="6" x2="6" y2="18"></line>
+								<line x1="6" y1="6" x2="18" y2="18"></line>
 							</svg>
 						</button>
 					</div>
@@ -722,7 +783,7 @@
 				<div class="modal-header">
 					<h2>Seleccionar ubicación</h2>
 					<button type="button" id="cerrarMapaBtn" class="cerrar-btn">
-						<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+						<svg width="2vh" height="2vh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="pointer-events: none;"><path d="M18 6L6 18M6 6l12 12" /></svg>
 					</button>
 				</div>
 				<div class="input-group" style="margin-bottom: 1.5vh;">

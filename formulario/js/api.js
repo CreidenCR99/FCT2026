@@ -8,6 +8,7 @@ import { renderKPIs, renderLogsNormal, mostrarSkeleton, actualizarDatosModal, li
 import { renderTabla } from './table.js';
 import { getEstadoControl, getTooltipEstado, getClaseConexion } from './utils.js';
 import { calcularMaxLineas, construirPaginasPresentacion, detenerActualizacionEstado, renderPresentacion } from './presentation.js';
+import { showDBErrorToast } from '../../core/toasts.js';
 
 // --- Inicialización ---
 
@@ -45,6 +46,11 @@ export async function cargarPaises() {
 	try {
 		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=paises`);
 		const data = await res.json();
+		
+		if (data && data.db_connection_error) {
+			showDBErrorToast("Fallo al obtener catálogo de países.");
+		}
+		
 		dom.selectPais.innerHTML = `<option value="">Todos los países</option>`;
 		data.forEach(item => {
 			const opt = document.createElement("option");
@@ -70,6 +76,11 @@ export async function cargarOrganismos(pais = "") {
 	try {
 		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=organismos&pais=${encodeURIComponent(pais)}`);
 		const data = await res.json();
+
+		if (data && data.db_connection_error) {
+			showDBErrorToast("Fallo al obtener catálogo de organismos.");
+		}
+
 		dom.selectOrganismo.innerHTML = `<option value="">Todos los organismos</option>`;
 		data.forEach(item => {
 			const opt = document.createElement("option");
@@ -98,6 +109,11 @@ export async function cargarProvincias(organismo = "", pais = "") {
 	try {
 		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=provincias&organismo=${encodeURIComponent(organismo)}&pais=${encodeURIComponent(pais)}`);
 		const data = await res.json();
+
+		if (data && data.db_connection_error) {
+			showDBErrorToast("Fallo al obtener catálogo de provincias.");
+		}
+
 		const valorActual = dom.selectProvincia.value;
 		dom.selectProvincia.innerHTML = `<option value="">Todas las provincias</option>`;
 		data.forEach(item => {
@@ -125,6 +141,11 @@ export async function cargarErrores() {
 	try {
 		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=errores`);
 		const data = await res.json();
+
+		if (data && data.db_connection_error) {
+			showDBErrorToast("Fallo al obtener catálogo de tipos de error.");
+		}
+
 		const select = document.getElementById("modalCodigoErrorSelect");
 		if (!select) return;
 
@@ -236,6 +257,10 @@ export async function fetchAndRenderData() {
 
 		// Validación de seguridad: Si el backend devuelve un objeto de error en lugar de un array
 		if (!Array.isArray(data)) {
+			if (data && data.db_connection_error) {
+				showDBErrorToast("No se pudo conectar con el servidor SQL principal.");
+			}
+			
 			let errorDetail = data.error;
 			if (Array.isArray(errorDetail)) {
 				// Extraemos los mensajes de error de la estructura de sqlsrv_errors()
@@ -270,7 +295,8 @@ export async function fetchAndRenderData() {
 		if (data.length > 0 && appState.columnasTabla.length === 0) {
 			appState.columnasTabla = Object.keys(data[0]).filter(col =>
 				!col.startsWith('_') && col !== "UltimoControl" && col !== "MonitorizarEstado" &&
-				col !== "NumeroSerie" && col !== "MonitorizarAlertas" && col !== "Logs" && col !== "TipoMaquina"
+				col !== "NumeroSerie" && col !== "MonitorizarAlertas" && col !== "Logs" && col !== "TipoMaquina" &&
+				col !== "CodOrganismo" && col !== "CodProvincia" && col !== "CodCliente"
 			);
 		} else if (data.length === 0) {
 			appState.columnasTabla = [];

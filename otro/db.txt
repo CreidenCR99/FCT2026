@@ -1,7 +1,0 @@
-Clientes: Codigo (nvarchar(6)), Nombre (nvarchar(150))
-Errores: Codigo (nvarchar(4)), Nombre (nvarchar(150))
-Organismos: Codigo (nvarchar(4)), Nombre (nvarchar(150))
-Paises: Codigo (char (3)), Nombre (nvarchar(50)), Longitud (numeric(10, 7) ALLOW NULLS), Latitud (numeric(10, 7) ALLOW NULLS)
-Provincias: Codigo (nvarchar(10)), Nombre (nvarchar(50)), Pais (char(3) ALLOW NULLS), Longitud (numeric(10, 7) ALLOW NULLS), Latitud (numeric(10, 7) ALLOW NULLS)
-Log_Errores: NumeroSerie (nvarchar(50)), TipoMaquina (nvarchar(10) ALLOW NULLS), TimeStamp (nvarchar(16) YYYYMMDDDHHMMSS), CodigoError (nvarchar(4)), Activo (True/False), Observaciones (nvarchar(150) ALLOW NULLS)
-Maquinas: NumeroSerie (nvarchar(50)), Descripcion (nvarchar(50)), Actualizar (True/False), TipoMaquina (nvarchar(10) ALLOW NULLS), Activo (True/False), Notas (nvarchar(50) ALLOW NULLS), Organismo (nvarchar(4) ALLOW NULLS), Cliente (nvarchar(6) ALLOW NULLS), Provincia (nvarchar(10) ALLOW NULLS), UltimoControl (bigint YYYYMMDDDHHMM), MonitorizarEstado (True/False), MonitorizarAlertas (True/False)

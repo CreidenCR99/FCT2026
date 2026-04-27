@@ -1,12 +1,15 @@
 /**
- * Módulo: api.js
- * Capa de abstracción para la comunicación con el backend de geolocalización.
+ * @module api.js
+ * @description Capa de abstracción para la comunicación con el backend y el Worker.
+ * Gestiona la carga de datos geográficos, la sincronización de alertas críticas
+ * y el renderizado eficiente de marcadores en el mapa mediante morphdom.
  */
 import { appState } from './state.js';
 import { CONFIG } from '../config.js';
 import { aplicarFiltroHorario, actualizarStatsUI, sincronizarLeyenda } from './ui.js';
-import { syncAlerts } from './notifications.js';
+import { syncAlerts, getAlertTimestampsObject } from './notifications.js';
 import { getCache, setCache } from './db.js';
+import { showDBErrorToast } from '../../core/toasts.js';
 
 // --- Inicialización del Worker ---
 
@@ -33,7 +36,10 @@ apiWorker.onmessage = (e) => {
   if (!resolve) return;
   pendingRequests.delete(mode);
 
-  if (status === 500) {
+  if (status >= 400) {
+    if (e.data.db_connection_error) {
+      showDBErrorToast("La conexión con la base de datos ha fallado en el servidor.");
+    }
     console.error(`Error en Worker (${mode}):`, error);
     resolve();
     return;
@@ -46,7 +52,11 @@ apiWorker.onmessage = (e) => {
     } else if (mode === 'mapa_data') {
       // Actualización masiva de estado global tras recibir datos de puntos
       appState.provincias = provincias;
-      setCache('mapa_data', { provincias, alertas });
+      setCache('mapa_data', { 
+        provincias, 
+        alertas, 
+        alertTimestamps: getAlertTimestampsObject() 
+      });
 
       syncAlerts(alertas);
       renderizarPuntosMapa();
@@ -103,7 +113,7 @@ export async function actualizarDatos() {
     }
 
     aplicarFiltroHorario();
-    appState.msNextData = CONFIG.MS_DATOS;
+    appState.msNextData = CONFIG.REFRESH_INTERVAL_MS;
 
     const bar = document.getElementById("data-refresh-bar");
     if (bar) {

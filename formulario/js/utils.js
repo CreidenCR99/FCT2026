@@ -1,6 +1,8 @@
 /**
- * Módulo: utils.js
- * Funciones de utilidad pura y cálculos de estado para evitar dependencias circulares.
+ * @module utils.js
+ * @description Conjunto de funciones de utilidad pura y cálculos de estado.
+ * Proporciona herramientas para sanitización XSS, formateo de fechas,
+ * detección de estados de conexión y normalización de tipos de datos.
  */
 import { CONFIG } from '../config.js';
 

@@ -1,7 +1,8 @@
 /**
- * Web Worker: worker.js
- * Procesa las peticiones a la API y la lógica de datos pesada en un hilo separado
- * para no bloquear las animaciones de la interfaz de usuario.
+ * @module worker.js
+ * @description Web Worker para el procesamiento de datos en segundo plano.
+ * Realiza las peticiones fetch a la API, la reconstrucción de objetos y las
+ * operaciones de ordenación pesada para mantener el hilo principal (UI) libre.
  */
 
 self.onmessage = async (e) => {
@@ -15,7 +16,16 @@ self.onmessage = async (e) => {
       return;
     }
 
-    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      self.postMessage({ 
+        mode, 
+        status: response.status, 
+        error: errorData.error || `HTTP Error: ${response.status}`,
+        db_connection_error: !!errorData.db_connection_error
+      });
+      return;
+    }
 
     const data = await response.json();
 

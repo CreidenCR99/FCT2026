@@ -1,10 +1,13 @@
 /**
- * Módulo: table.js
+ * @module table.js
+ * @description Gestiona el renderizado dinámico de la tabla de máquinas.
+ * Incluye funcionalidades de filtrado local, ordenación interactiva, exportación a CSV
+ * y parcheo eficiente del DOM mediante morphdom para mantener el estado del usuario.
  */
 import { CONFIG } from '../config.js';
 import { appState } from './state.js';
 import * as dom from './dom.js';
-import { esFalso, getEstadoControl } from './utils.js';
+import { esFalso, getEstadoControl, escapeHtml, formatTimeStamp } from './utils.js';
 import { cerrarModal, abrirModalError } from './ui.js';
 import { salirModoPresentation, renderPresentacion } from './presentation.js';
 
@@ -26,32 +29,72 @@ dom.searchInput.addEventListener("input", () => {
 
 
 /**
- * Genera un archivo CSV con los datos actuales de las máquinas visibles (monitorizadas).
- * Incluye todas las columnas de la tabla y añade una columna extra con el estado calculado (✓, !, ⚠, etc.).
- * Dispara automáticamente la descarga en el navegador.
- * @returns {void}
+ * Genera un archivo CSV con los errores ocurridos en las últimas 24 horas (activos y corregidos).
+ * Recupera los datos directamente de la API para asegurar que se incluyen registros históricos recientes.
+ * @async
+ * @returns {Promise<void>}
  */
-export function exportarCSV() {
-	const datos = appState.datosTabla.filter(f => !esFalso(f.MonitorizarEstado));
-	if (!datos.length) return;
-	const headers = [...appState.columnasTabla, "Estado"];
-	const rows = datos.map(fila => {
-		const cols = appState.columnasTabla.map(col => `"${String(fila[col] ?? "").replace(/"/g, '""')}"`);
-		cols.push(getEstadoControl(fila).texto);
-		return cols.join(",");
-	});
-	const csv = [headers.join(","), ...rows].join("\n");
-	const blob = new Blob([csv], {
-		type: "text/csv;charset=utf-8;"
-	});
-	const url = URL.createObjectURL(blob);
-	const a = document.createElement("a");
-	a.href = url;
-	a.download = `maquinas_${new Date().toISOString().slice(0, 10)}.csv`;
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	URL.revokeObjectURL(url);
+export async function exportarCSV() {
+	try {
+		const btn = dom.exportCsvBtn;
+		const originalText = btn.innerHTML;
+		
+		btn.disabled = true;
+		btn.innerHTML = `<span class="spinner-small"></span> Generando...`;
+
+		const res = await fetch(`${CONFIG.API_ENDPOINT}?modo=exportar_errores_24h`);
+		const datos = await res.json();
+
+		if (!datos || datos.length === 0) {
+			Swal.fire({
+				title: "Sin datos",
+				text: "No se han encontrado errores (activos o corregidos) en las últimas 24 horas.",
+				icon: "info",
+				confirmButtonColor: "var(--primary)"
+			});
+			return;
+		}
+
+		const headers = ["Fecha/Hora", "S/N", "Maquina", "Organismo", "Provincia", "Cliente", "Error", "Estado", "Observaciones"];
+		const rows = datos.map(fila => {
+			const cols = [
+				`"${formatTimeStamp(fila.TimeStamp)}"`,
+				`"${fila.NumeroSerie}"`,
+				`"${String(fila.Maquina ?? "").replace(/"/g, '""')}"`,
+				`"${String(fila.Organismo ?? "").replace(/"/g, '""')}"`,
+				`"${String(fila.Provincia ?? "").replace(/"/g, '""')}"`,
+				`"${String(fila.Cliente ?? "").replace(/"/g, '""')}"`,
+				`"${String(fila.Error ?? "").replace(/"/g, '""')}"`,
+				esFalso(fila.Activo) ? "CORREGIDO" : "ACTIVO",
+				`"${String(fila.Observaciones ?? "").replace(/"/g, '""')}"`
+			];
+			return cols.join(",");
+		});
+
+		const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n"); // Añadimos BOM para Excel
+		const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		
+		a.href = url;
+		a.download = `Reporte_Errores_24h_${new Date().toISOString().slice(0, 10)}.csv`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+
+	} catch (error) {
+		console.error("Error al exportar CSV:", error);
+		Swal.fire({
+			title: "Error",
+			text: "No se pudo generar el reporte de errores. Inténtelo de nuevo más tarde.",
+			icon: "error",
+			confirmButtonColor: "var(--primary)"
+		});
+	} finally {
+		dom.exportCsvBtn.disabled = false;
+		dom.exportCsvBtn.innerHTML = "Exportar CSV";
+	}
 }
 
 // ---- Renderizar tabla ----
@@ -127,7 +170,14 @@ export function renderTabla(maquinasCambiadas = new Set()) {
 
 		htmlBuffer += `
         <tr class="row-${colorSuffix}${esCambio}${cascadeClass}" title="${rowTitle}" style="cursor:pointer;${cascadeStyle}" data-ns="${fila.NumeroSerie}">
-          ${appState.columnasTabla.map(col => `<td>${fila[col] ?? ""}</td>`).join("")}
+          ${appState.columnasTabla.map(col => {
+            let titleAttr = "";
+            if (col === "Organismo" && fila.CodOrganismo) titleAttr = ` title="Código: ${fila.CodOrganismo}" style="cursor:help"`;
+            else if (col === "Provincia" && fila.CodProvincia) titleAttr = ` title="Código: ${fila.CodProvincia}" style="cursor:help"`;
+            else if (col === "Cliente" && fila.CodCliente) titleAttr = ` title="Código: ${fila.CodCliente}" style="cursor:help"`;
+            
+            return `<td${titleAttr}>${escapeHtml(String(fila[col] ?? ""))}</td>`;
+          }).join("")}
           <td>
             <span class="estado-pill ${estado.clase}" title="${fila._tooltip}" aria-label="Estado: ${estado.texto}">
               ${estado.texto}

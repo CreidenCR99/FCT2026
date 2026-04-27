@@ -1,6 +1,8 @@
 /**
- * Módulo: navigation.js
- * Maneja la lógica de navegación cinematográfica entre países y el control de rotación.
+ * @module navigation.js
+ * @description Maneja la lógica de navegación cinematográfica entre países.
+ * Controla la rotación automática, el enfoque (flyTo) con zoom personalizado por país
+ * y la gestión de visibilidad del mapa secundario (insetMap) según la ubicación.
  */
 import { appState } from './state.js';
 import { CONFIG, INSET_VIEWS } from '../config.js';
@@ -53,6 +55,20 @@ export function togglePausa() {
   const btn = document.getElementById("btn-pause");
   btn.textContent = appState.estaPausado ? "▶" : "⏸";
   if (!appState.estaPausado) appState.msNextRotation = getMsRotacionPorPais(appState.paises[appState.paisActualIdx]);
+  
+  // Mostrar indicador visual grande
+  let indicator = document.getElementById("pause-indicator");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.id = "pause-indicator";
+    indicator.className = "pause-overlay-indicator";
+    document.body.appendChild(indicator);
+  }
+  
+  indicator.textContent = appState.estaPausado ? "⏸" : "▶";
+  indicator.classList.remove("animate-ping");
+  void indicator.offsetWidth; // Forzar reflow para reiniciar la animación
+  indicator.classList.add("animate-ping");
 }
 
 /**

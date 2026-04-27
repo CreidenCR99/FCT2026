@@ -31,6 +31,14 @@ const normalizeString = (str) => {
 class MasterController {
     /**
      * @param {Object} config - Configuración de la entidad y mapeo del DOM.
+     * @param {string} config.type - Tipo de entidad (ej. 'maquinas', 'organismos').
+     * @param {string} config.tableName - Nombre de la tabla física en la base de datos.
+     * @param {HTMLElement} config.modal - Referencia al contenedor modal.
+     * @param {HTMLFormElement} config.form - Referencia al formulario dentro del modal.
+     * @param {Object<string, HTMLElement>} config.inputs - Mapa de campos del formulario.
+     * @param {Array<Object>} [config.paddingConfigs] - Configuración de autocompletado de ceros.
+     * @param {Object} [config.uniqueCheck] - Configuración para validación de duplicados.
+     * @param {string} [config.deleteConfirmField] - Nombre del campo a escribir para confirmar borrado.
      */
     constructor(config) {
         this.config = config; // { type, tableName, modal, form, inputs, paddingConfigs, uniqueCheck, deleteConfirmField }
@@ -63,7 +71,7 @@ class MasterController {
         if (!this.config.form) return;
 
         // Configuración inicial de botones
-        if (this.ui.btnBack) this.ui.btnBack.innerHTML = SVG_BACK + "Volver";
+        // (El contenido se maneja en el HTML para facilitar personalización visual)
 
         // Eventos de validación
         this.config.form.addEventListener("input", (e) => {
@@ -150,6 +158,11 @@ if (this.config.uniqueCheck) {
     /**
      * Verifica duplicados en tiempo real (Local + Servidor) y aplica feedback visual.
      * @async
+     * @param {HTMLInputElement} input - Elemento de entrada a validar.
+     * @param {'codigo'|'nombre'} fieldType - Tipo de campo para la consulta.
+     * @param {string} label - Nombre legible del campo para el mensaje de alerta.
+     * @param {AbortSignal} [signal] - Señal para abortar peticiones fetch.
+     * @returns {Promise<boolean>} True si el valor está duplicado.
      */
     async verifyDuplicate(input, fieldType, label, signal = null) {
         const val = input.value.trim();
@@ -267,6 +280,8 @@ if (this.config.uniqueCheck) {
 
     /**
      * Recupera el listado completo de la entidad desde la API.
+     * @async
+     * @returns {Promise<void>}
      */
     async loadData() {
         const modo = this.config.type === 'maquinas' ? 'maquinas_navegacion' : 'maestro';
@@ -335,6 +350,9 @@ if (this.config.uniqueCheck) {
         this.updateUI();
     }
 
+    /**
+     * Resetea el formulario a su estado inicial para la creación de un nuevo registro.
+     */
     resetForm() {
         this.state.index = -1;
         this.config.form.reset();
@@ -355,6 +373,9 @@ if (this.config.uniqueCheck) {
         this.updateUI();
     }
 
+    /**
+     * Actualiza los elementos informativos de la interfaz (contador, visibilidad de botones).
+     */
     updateUI() {
         if (this.ui.count) {
             this.ui.count.textContent = this.state.index === -1 ? "Nuevo" : `${this.state.index + 1} / ${this.state.data.length}`;
@@ -368,6 +389,10 @@ if (this.config.uniqueCheck) {
         this.updateBtnState();
     }
 
+    /**
+     * Comprueba la validez del formulario y habilita/deshabilita el botón de guardado.
+     * También actualiza el tooltip con los campos faltantes.
+     */
     updateBtnState() {
         const btn = this.config.form.querySelector('button[type="submit"]');
         if (!btn) return;
@@ -389,6 +414,11 @@ if (this.config.uniqueCheck) {
         }
     }
 
+    /**
+     * Procesa el envío del formulario, realizando validaciones finales y enviando los datos a la API.
+     * @async
+     * @param {Event} e - Evento de submit del formulario.
+     */
     async handleSave(e) {
         e.preventDefault();
 
@@ -511,6 +541,13 @@ if (this.config.uniqueCheck) {
             formData.append("UltimoControl", "0");
         }
 
+        const submitBtn = this.config.form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.dataset.originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = "Guardando...";
+        }
+
         try {
             const res    = await fetch(url, { method: "POST", body: formData });
             const result = await res.json();
@@ -542,9 +579,18 @@ if (this.config.uniqueCheck) {
                 confirmButtonColor: 'var(--kpi-alerta-color)',
                 target:             document.fullscreenElement || document.body
             });
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = submitBtn.dataset.originalText;
+            }
         }
     }
 
+    /**
+     * Gestiona la eliminación del registro actual tras una confirmación de seguridad.
+     * @async
+     */
     async handleDelete() {
         if (this.state.index === -1) return;
         const item = this.state.data[this.state.index];
@@ -578,6 +624,13 @@ if (this.config.uniqueCheck) {
         }
 
         if (isConfirmed) {
+            const delBtn = this.ui.btnEliminar;
+            if (delBtn) {
+                delBtn.disabled = true;
+                delBtn.dataset.originalText = delBtn.innerHTML;
+                delBtn.innerHTML = "Eliminando...";
+            }
+
             try {
                 const formData = new FormData();
                 const modo = this.config.type === 'maquinas' ? 'eliminar_maquina' : 'eliminar_maestro';
@@ -602,7 +655,7 @@ if (this.config.uniqueCheck) {
                 } else {
                     throw new Error(result.error || "No se pudo eliminar el registro por restricciones del sistema.");
                 }
-            } catch (err) {
+        } catch (err) {
                 Swal.fire({
                     title:              "Error al eliminar",
                     text:               err.message,
@@ -610,27 +663,43 @@ if (this.config.uniqueCheck) {
                     confirmButtonColor: 'var(--kpi-alerta-color)',
                     target:             document.fullscreenElement || document.body
                 });
+            } finally {
+                const delBtn = this.ui.btnEliminar;
+                if (delBtn) {
+                    delBtn.disabled = false;
+                    delBtn.innerHTML = delBtn.dataset.originalText;
+                }
             }
         }
     }
 }
 
 /**
- * Gestión del Selector Principal y Teclado
+ * Abre el modal de selección de maestro principal.
  */
 function openSelector() {
     dom.modalRegistroMaestro.style.display = "flex";
     document.body.style.overflow = "hidden";
 }
 
+/**
+ * Cierra el modal de selección de maestro principal.
+ */
 function closeSelector() {
     dom.modalRegistroMaestro.style.display = "none";
     document.body.style.overflow = "";
 }
 
 document.addEventListener("keydown", (e) => {
-    // Atajo F1 para Máquinas
+    // Atajo F1 para Navegación Cruzada (Ir al Mapa)
     if (e.key === "F1" && !appState.modoPresentacion) {
+        e.preventDefault();
+        window.location.href = "../mapa/";
+        return;
+    }
+
+    // Atajo F3 para Maestro de Registros
+    if (e.key === "F3" && !appState.modoPresentacion) {
         e.preventDefault();
         openSelector();
         return;
@@ -716,6 +785,9 @@ export const maestros = {
     })
 };
 
+/**
+ * Inicializa todos los controladores de maestros y vincula los eventos de apertura globales.
+ */
 export function initAllMaestros() {
     dom.registroMaquinasBtn?.addEventListener("click", openSelector);
     dom.cerrarRegistroMaestroBtn?.addEventListener("click", closeSelector);

@@ -1,5 +1,8 @@
 /**
- * Módulo: main.js
+ * @module main.js
+ * @description Punto de entrada principal de la aplicación de Formulario.
+ * Orquesta la inicialización de módulos, gestión de filtros, eventos globales
+ * y el ciclo de vida de la actualización de datos.
  */
 import { appState } from './state.js';
 import * as dom from './dom.js';

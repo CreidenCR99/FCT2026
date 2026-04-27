@@ -34,6 +34,7 @@ export const backToTopBtn         = document.getElementById("backToTop");       
 export const floatingLogo         = document.getElementById("floatingLogo");         // Logo flotante que aparece al hacer scroll
 export const registroMaquinasBtn  = document.getElementById("registroMaquinasBtn");  // Botón Maestro de Máquinas
 export const buscadorMaestroBtn   = document.getElementById("buscadorMaestroBtn");   // Botón Buscador Maestro (F2)
+export const modalNuevoErrorBtn    = document.getElementById("modalNuevoErrorBtn");    // Botón para crear nuevo error desde el modal de detalles
 
 // --- Elementos para el Maestro de Máquinas ---
 export const modalMaquinas        = document.getElementById("modalMaquinas");

@@ -162,7 +162,13 @@
 }
 
 .log-item-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-0.3vh) scale(1.01);
+  box-shadow: var(--shadow);
   border-color: var(--primary);
+  background: var(--surface-offset);
+}
+
+.log-item-clickable:active {
+  transform: translateY(0.1vh) scale(0.98);
+  box-shadow: var(--shadow-sm);
 }

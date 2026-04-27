@@ -5,6 +5,7 @@
 import { CONFIG } from '../config.js';
 import * as dom from './dom.js';
 import { appState } from './state.js';
+import { cargarOrganismos, cargarProvincias } from './api.js';
 
 /**
  * Estado local para resultados de búsqueda y caché de catálogos.
@@ -22,6 +23,8 @@ let searchTimeout = null;
 /**
  * Abre el buscador desde otro módulo (ej. MachineMaster) 
  * y define qué hacer con el resultado seleccionado.
+ * @param {string} entity - Tipo de entidad a buscar.
+ * @param {Function} callback - Función a ejecutar con el registro seleccionado.
  */
 export function openSearchMasterExternally(entity, callback) {
 	externalCallback = callback;
@@ -31,6 +34,9 @@ export function openSearchMasterExternally(entity, callback) {
 	openSearchMaster();
 }
 
+/**
+ * Inicializa los eventos del buscador maestro, incluyendo atajos de teclado y listeners de UI.
+ */
 export function initSearchMaster() {
 	const modal = document.getElementById("modalBusqueda");
 	const input = document.getElementById("smInput");
@@ -46,7 +52,7 @@ export function initSearchMaster() {
 	 * Gestor de teclado global para el buscador.
 	 * e.stopImmediatePropagation() evita que el Escape cierre otros modales abiertos.
 	 */
-	document.addEventListener("keydown", (e) => {
+	document.addEventListener("keydown", async (e) => {
 		if (e.key === "F2" && !appState.modoPresentacion) {
 			e.preventDefault();
 			openSearchMaster();
@@ -62,7 +68,7 @@ export function initSearchMaster() {
 			}
 			if (e.key === "Enter") {
 				if (e.target === input) performSearch();
-				else selectCurrent();
+				else await selectCurrent();
 			}
 		}
 	});
@@ -104,7 +110,7 @@ export function initSearchMaster() {
 	document.getElementById("smBtnPrev").onclick = () => navigate(-1);
 	document.getElementById("smBtnNext").onclick = () => navigate(1);
 	document.getElementById("smBtnLast").onclick = () => navigate('last');
-	document.getElementById("smBtnSeleccionar").onclick = selectCurrent;
+	document.getElementById("smBtnSeleccionar").onclick = async () => await selectCurrent();
 }
 
 /**
@@ -139,6 +145,8 @@ function closeSearchMaster() {
 
 /**
  * Recupera los datos de la entidad seleccionada, usando caché si está disponible.
+ * @async
+ * @param {string} type - El tipo de entidad a cargar.
  */
 async function loadCategoryData(type) {
 	if (state.cache[type]) {
@@ -164,15 +172,6 @@ function performSearch() {
 		state.filtered = state.data;
 	} else {
 		if (crit === 'codigo') {
-			// Auto-relleno de ceros según entidad (Excepto máquinas)
-			let padded = val;
-			if (type === 'maquinas') padded = val;
-			else if (type === 'organismos') padded = val.padStart(4, '0');
-			else if (type === 'provincias') padded = val.padStart(2, '0');
-			else if (type === 'clientes') padded = val.padStart(5, '0');
-			else if (type === 'errores') padded = val.padStart(4, '0');
-			else if (type === 'paises') padded = val.padStart(3, '0');
-
 			state.filtered = state.data.filter(item => String(item.Codigo).includes(val));
 		} else {
 			state.filtered = state.data.filter(item => {
@@ -188,6 +187,7 @@ function performSearch() {
 
 /**
  * Navega por los resultados filtrados.
+ * @param {number|'first'|'last'} dir - Dirección de navegación.
  */
 function navigate(dir) {
 	if (state.filtered.length === 0) return;
@@ -224,8 +224,9 @@ function updateDisplay() {
 /**
  * Finaliza la búsqueda enviando el resultado al callback externo 
  * o aplicando los filtros a la pantalla principal.
+ * @async
  */
-function selectCurrent() {
+async function selectCurrent() {
 	const res = state.filtered[state.index];
 	if (!res) return;
 
@@ -238,16 +239,43 @@ function selectCurrent() {
 		return;
 	}
 
-	// Mapear selección al formulario principal
-	if (entidad === 'organismos') {
+	// Mapear selección al formulario principal respetando la jerarquía
+	if (entidad === 'paises') {
+		dom.selectPais.value = res.Nombre;
+		// Al seleccionar un país, cargamos sus organismos y provincias y reseteamos selecciones hijas
+		await cargarOrganismos(res.Nombre);
+		await cargarProvincias("", res.Nombre);
+		dom.selectOrganismo.value = "";
+		dom.selectProvincia.value = "";
+	} else if (entidad === 'organismos') {
+		// Ponemos país en "Todos" para asegurar que el organismo sea visible en el combo
+		dom.selectPais.value = "";
+		await cargarOrganismos("");
 		dom.selectOrganismo.value = res.Nombre;
-		dom.selectOrganismo.dispatchEvent(new Event('change'));
+		// Cargamos las provincias de este organismo
+		await cargarProvincias(res.Nombre, "");
+		dom.selectProvincia.value = "";
 	} else if (entidad === 'provincias') {
-		// Para provincias, si el organismo no está seleccionado, podríamos tener problemas
-		// pero el buscador maestro permite búsqueda global.
+		// Las provincias del maestro incluyen el campo 'Pais'
+		if (res.Pais) {
+			dom.selectPais.value = res.Pais;
+			await cargarOrganismos(res.Pais);
+		} else {
+			dom.selectPais.value = "";
+			await cargarOrganismos("");
+		}
+		// Reseteamos organismo para ver la provincia de forma global en ese país
+		dom.selectOrganismo.value = "";
+		await cargarProvincias("", dom.selectPais.value);
 		dom.selectProvincia.value = res.Nombre;
-	}
-	else {
+	} else if (entidad === 'maquinas') {
+		// Para máquinas, usamos el buscador de texto libre
+		if (dom.searchInput) {
+			dom.searchInput.value = res.Codigo; // Usamos el SN para búsqueda exacta
+			dom.searchInput.dispatchEvent(new Event('input'));
+		}
+	} else {
+		// Fallback genérico (Clientes, Errores...) al buscador de texto
 		if (dom.searchInput) {
 			dom.searchInput.value = res.Nombre;
 			dom.searchInput.dispatchEvent(new Event('input'));

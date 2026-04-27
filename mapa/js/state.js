@@ -1,6 +1,8 @@
 /**
- * Módulo: state.js
- * Maneja el estado dinámico de la aplicación.
+ * @module state.js
+ * @description Almacén central del estado dinámico para la aplicación de Mapa.
+ * Mantiene las instancias de Leaflet, colecciones de marcadores, datos de provincias,
+ * alertas activas y temporizadores de sincronización y rotación.
  */
 
 /**

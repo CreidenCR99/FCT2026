@@ -1,5 +1,8 @@
 /**
- * Módulo: theme.js
+ * @module theme.js
+ * @description Gestiona la persistencia y alternancia del tema visual (Claro/Oscuro).
+ * Implementa transiciones de vista (View Transitions API) y actualiza dinámicamente
+ * los assets (logos) y estilos globales según la preferencia del usuario.
  */
 import { themeToggle } from './dom.js';
 
@@ -12,15 +15,23 @@ const htmlEl = document.documentElement;
 /**
  * Detecta la preferencia inicial del sistema o navegador.
  */
-let currentTheme = window.matchMedia("(prefers-color-scheme: light)").matches ? "dark" : "light";
+let currentTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 htmlEl.setAttribute("data-theme", currentTheme);
 updateThemeIcon();
 
 /** Evento para alternar el tema visual de la aplicación. */
 themeToggle.addEventListener("click", () => {
-	currentTheme = currentTheme === "light" ? "dark" : "light";
-	htmlEl.setAttribute("data-theme", currentTheme);
-	updateThemeIcon();
+	const toggleTheme = () => {
+		currentTheme = currentTheme === "light" ? "dark" : "light";
+		htmlEl.setAttribute("data-theme", currentTheme);
+		updateThemeIcon();
+	};
+
+	if (document.startViewTransition) {
+		document.startViewTransition(toggleTheme);
+	} else {
+		toggleTheme();
+	}
 });
 
 
@@ -30,12 +41,13 @@ themeToggle.addEventListener("click", () => {
  * @returns {void}
  */
 export function updateThemeIcon() {
-	const logos = document.querySelectorAll('img[src*="../LOGO_SicoLares"]');
+	const logos = document.querySelectorAll('img[src*="LOGO_SicoLares"]');
 	logos.forEach(img => {
+		let currentSrc = img.getAttribute("src");
 		if (currentTheme === "dark") {
-			img.src = img.src.replace("../LOGO_SicoLares.png", "../LOGO_SicoLares_Negativo.png");
+			img.setAttribute("src", currentSrc.replace("LOGO_SicoLares.png", "LOGO_SicoLares_Negativo.png"));
 		} else {
-			img.src = img.src.replace("../LOGO_SicoLares_Negativo.png", "../LOGO_SicoLares.png");
+			img.setAttribute("src", currentSrc.replace("LOGO_SicoLares_Negativo.png", "LOGO_SicoLares.png"));
 		}
 	});
 

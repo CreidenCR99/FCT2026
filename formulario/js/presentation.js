@@ -1,11 +1,14 @@
 /**
- * Módulo: presentation.js
+ * @module presentation.js
+ * @description Gestiona el modo de presentación (pantalla completa).
+ * Incluye la lógica de paginación jerárquica, cálculo dinámico de líneas según resolución,
+ * y renderizado optimizado para visualización en monitores de monitoreo.
  */
 import { CONFIG } from '../config.js';
 import { appState, INTERVALO_MS } from './state.js';
 import * as dom from './dom.js';
 import { renderTabla } from './table.js';
-import { getEstadoControl, esFalso, escapeHtml, obtenerErroresActivos } from './utils.js';
+import { getEstadoControl, getClaseConexion, esFalso, escapeHtml, obtenerErroresActivos } from './utils.js';
 import { renderLogsNormal, iniciarProgressBar, detenerProgressBar, abrirModalError } from './ui.js';
 import { fetchAndRenderData } from './api.js';
 
@@ -315,23 +318,43 @@ function renderItem(item) {
 	if (item.tipo === "provincia") return `<div class="linea-provincia">${escapeHtml(item.texto)}</div>`;
 	if (item.tipo === "cliente") return `<div class="linea-cliente">${escapeHtml(item.texto)}</div>`;
 	if (item.tipo === "maquina") {
+		const fila = item.fila;
+		const claseConexion = getClaseConexion(fila);
+		const tieneErrores = !esFalso(fila.MonitorizarAlertas) && (fila.Logs || []).some(l => !esFalso(l.Activo));
+
 		const colorMap = {
 			"estado-verde": "#28a745",
 			"estado-rojo": "#a10702",
-			"estado-naranja": "#f58a07",
 			"estado-gris": "#6e6e73"
 		};
-		const bg = colorMap[item.estado.clase] || "#6e6e73";
+		// El fondo de la fila siempre es el de su estado de conexión
+		const bg = colorMap[claseConexion] || "#6e6e73";
 
-		// Formateo de la última conexión (YYYYMMDDHHMM -> DD/MM/YYYY HH:mm)
-		const uc = String(item.fila.UltimoControl || "");
-		const fechaFormateada = uc.length >= 12 
-			? `${uc.slice(6, 8)}/${uc.slice(4, 6)}/${uc.slice(0, 4)} ${uc.slice(8, 10)}:${uc.slice(10, 12)}`
-			: "-";
+		// Formateo de la fecha (Al revés: completa si offline, solo hora si online)
+		const uc = String(fila.UltimoControl || "");
+		let fechaFormateada = "-";
+		if (uc.length >= 12) {
+			if (claseConexion === "estado-verde") {
+				// Solo hora para máquinas conectadas (Verde)
+				fechaFormateada = `${uc.slice(8, 10)}:${uc.slice(10, 12)}`;
+			} else {
+				// Fecha completa para desconectadas o desconocidas
+				fechaFormateada = `${uc.slice(6, 8)}/${uc.slice(4, 6)}/${uc.slice(0, 4)} ${uc.slice(8, 10)}:${uc.slice(10, 12)}`;
+			}
+		}
 
-		return `<div class="linea-maquina clickable" style="background:${bg}; cursor:pointer; display: flex; justify-content: space-between; align-items: center;" data-ns="${escapeHtml(item.fila.NumeroSerie)}">
+		// Construcción de badges
+		let badgesHTML = "";
+		if (tieneErrores) {
+			// Insignia de advertencia con fondo naranja de error y texto blanco
+			badgesHTML += `<span class="maquina-badge" style="background:#f58a07; color:#fff;">⚠</span>`;
+		}
+		const iconConexion = claseConexion === "estado-verde" ? "✓" : (claseConexion === "estado-rojo" ? "!" : "?");
+		badgesHTML += `<span class="maquina-badge">${iconConexion}</span>`;
+
+		return `<div class="linea-maquina clickable" style="background:${bg}; cursor:pointer; display: flex; justify-content: space-between; align-items: center;" data-ns="${escapeHtml(fila.NumeroSerie)}">
         <div style="display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          <span class="maquina-badge">${escapeHtml(item.estado.texto)}</span>
+          <div class="badges-container" style="display: flex; gap: 0.5vh; margin-right: 1vh;">${badgesHTML}</div>
           <span style="overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.texto)}</span>
         </div>
         <span class="maquina-fecha-pres" style="font-family: monospace; font-size: 0.85em; opacity: 0.9; margin-left: 15px; white-space: nowrap;">

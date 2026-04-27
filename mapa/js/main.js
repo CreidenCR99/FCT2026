@@ -1,11 +1,13 @@
 /**
- * Módulo: main.js
- * Orquestador principal de la aplicación de monitoreo.
+ * @module main.js
+ * @description Orquestador principal de la aplicación de Mapa.
+ * Inicializa los mapas Leaflet (Principal e Inset), gestiona el bucle de animación
+ * a 60 FPS para temporizadores, y coordina la lógica de inactividad y atajos de teclado.
  */
 import { appState } from './state.js';
 import { CONFIG, MAPAS } from '../config.js';
 import { cargarPaises, actualizarDatos } from './api.js';
-import { mostrarSkeleton, aplicarFiltroHorario, actualizarTimers } from './ui.js';
+import { mostrarSkeleton, aplicarFiltroHorario, actualizarTimers, actualizarLeyenda } from './ui.js';
 import { navegarPais, togglePausa, enfocarPais } from './navigation.js';
 import { iniciarCarrusel } from './notifications.js';
 
@@ -68,12 +70,17 @@ async function init() {
   mostrarSkeleton();
   await cargarPaises();
   aplicarFiltroHorario();
+  actualizarLeyenda();
   await actualizarDatos();
   iniciarCarrusel();
 
   // --- Registro de Eventos ---
 
   document.addEventListener("keydown", (e) => {
+    if (e.key === "F1") {
+      e.preventDefault();
+      window.location.href = "../formulario/";
+    }
     if (e.key === "ArrowRight") navegarPais(1);
     if (e.key === "ArrowLeft") navegarPais(-1);
     if (e.key === "ArrowUp") enfocarPais(appState.paises[appState.paisActualIdx]);
@@ -87,7 +94,12 @@ async function init() {
   document.getElementById("btn-next").onclick = () => navegarPais(1);
   document.getElementById("btn-pause").onclick = togglePausa;
 
-  appState.msNextData = CONFIG.MS_DATOS;
+  // Navegación cruzada: Si se hace click en el logo, vamos al Formulario
+  document.getElementById("logo-container").onclick = () => {
+    window.location.href = "../formulario/";
+  };
+
+  appState.msNextData = CONFIG.REFRESH_INTERVAL_MS;
   appState.msNextRotation = CONFIG.MS_ROTACION_DEFAULT; // Se ajustará al enfocar el primer país
 
   // --- Lógica de Inactividad del Mapa ---

@@ -1,6 +1,10 @@
 <?php
 /**
- * SicoLares Mapa API - Lógica Geográfica
+ * @file geo.php
+ * @description Lógica de procesamiento geográfico para el Mapa.
+ * Consolida la información de provincias, coordenadas y estados de las máquinas.
+ * Calcula en tiempo real las desconexiones basándose en el umbral configurado
+ * y agrupa los errores activos para su visualización en el mapa interactivo.
  */
 
 /**
@@ -20,7 +24,10 @@ if ($modo === 'paises') {
     }
 
     $paises = [];
-    while($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) { $paises[] = $row; }
+    while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+        $paises[] = $row;
+    }
+    
     responder_json_si_cambia($paises, $conn);
 }
 
@@ -42,7 +49,7 @@ if ($modo === 'mapa_data') {
     }
 
     $provincias = [];
-    while($row = sqlsrv_fetch_array($stmtProv, SQLSRV_FETCH_ASSOC)) {
+    while ($row = sqlsrv_fetch_array($stmtProv, SQLSRV_FETCH_ASSOC)) {
         $provincias[$row['Codigo']] = [
             "nombre" => $row['Nombre'],
             "lat" => (float)$row['Latitud'],
@@ -52,11 +59,14 @@ if ($modo === 'mapa_data') {
         ];
     }
 
-    $sqlMaquinas = "SELECT m.provincia, m.NumeroSerie, m.Descripcion, m.UltimoControl, m.MonitorizarEstado, m.MonitorizarAlertas,
-                    (SELECT COUNT(*) FROM Log_Errores le WHERE le.NumeroSerie = m.NumeroSerie AND le.Activo = 1) as Errores,
-                    (SELECT STRING_AGG(le2.CodigoError, ', ') FROM Log_Errores le2 WHERE le2.NumeroSerie = m.NumeroSerie AND le2.Activo = 1) as Codigos
-                    FROM Maquinas m 
-                    WHERE m.MonitorizarEstado = 1 OR m.MonitorizarAlertas = 1";
+    $sqlMaquinas = "
+        SELECT 
+            m.provincia, m.NumeroSerie, m.Descripcion, m.UltimoControl, m.MonitorizarEstado, m.MonitorizarAlertas,
+            (SELECT COUNT(*) FROM Log_Errores le WHERE le.NumeroSerie = m.NumeroSerie AND le.Activo = 1) as Errores,
+            (SELECT STRING_AGG(le2.CodigoError, ', ') FROM Log_Errores le2 WHERE le2.NumeroSerie = m.NumeroSerie AND le2.Activo = 1) as Codigos
+        FROM Maquinas m 
+        WHERE m.MonitorizarEstado = 1 OR m.MonitorizarAlertas = 1
+    ";
     
     $stmtMaq = sqlsrv_query($conn, $sqlMaquinas);
     $ahora = new DateTime();
@@ -69,9 +79,12 @@ if ($modo === 'mapa_data') {
     }
 
     $alertas = [];
-    while($m = sqlsrv_fetch_array($stmtMaq, SQLSRV_FETCH_ASSOC)) {
+    while ($m = sqlsrv_fetch_array($stmtMaq, SQLSRV_FETCH_ASSOC)) {
         $codProv = $m['provincia'];
-        if (!isset($provincias[$codProv])) continue;
+        
+        if (!isset($provincias[$codProv])) {
+            continue;
+        }
 
         $monitorizaEstado = (int)($m['MonitorizarEstado'] ?? 0);
         $monitorizaAlertas = (int)($m['MonitorizarAlertas'] ?? 0);
@@ -81,18 +94,27 @@ if ($modo === 'mapa_data') {
             if ($m['UltimoControl']) {
                 $fechaUC = DateTime::createFromFormat('YmdHi', substr($m['UltimoControl'], 0, 12));
                 if ($fechaUC) {
+                    $threshold = (int)(getenv('OFFLINE_THRESHOLD_MINUTES') ?: 10);
                     $diff = ($ahora->getTimestamp() - $fechaUC->getTimestamp()) / 60;
-                    if ($diff > 10) $isOffline = true;
-                } else { $isOffline = true; }
-            } else { $isOffline = true; }
+                    if ($diff > $threshold) {
+                        $isOffline = true;
+                    }
+                } else {
+                    $isOffline = true;
+                }
+            } else {
+                $isOffline = true;
+            }
         }
 
         $numErrores = (int)($m['Errores'] ?? 0);
         if ($monitorizaAlertas === 1 && $numErrores > 0) {
             $alertas[] = [
                 "sn" => $m['NumeroSerie'] . "_err_" . $numErrores,
-                "nombre" => $m['Descripcion'], "status" => "naranja",
-                "provincia" => $provincias[$codProv]['nombre'], "codigoError" => $m['Codigos'] ?? 'ERROR'
+                "nombre" => $m['Descripcion'], 
+                "status" => "naranja",
+                "provincia" => $provincias[$codProv]['nombre'], 
+                "codigoError" => $m['Codigos'] ?? 'ERROR'
             ];
             $provincias[$codProv]['counts']['naranja'] += $numErrores;
         }
@@ -100,8 +122,10 @@ if ($modo === 'mapa_data') {
         if ($monitorizaEstado === 1 && $isOffline) {
             $alertas[] = [
                 "sn" => $m['NumeroSerie'] . "_offline",
-                "nombre" => $m['Descripcion'], "status" => "rojo",
-                "provincia" => $provincias[$codProv]['nombre'], "codigoError" => "CONEXIÓN"
+                "nombre" => $m['Descripcion'], 
+                "status" => "rojo",
+                "provincia" => $provincias[$codProv]['nombre'], 
+                "codigoError" => "CONEXIÓN"
             ];
             $provincias[$codProv]['counts']['rojo']++;
         } elseif ($monitorizaEstado === 1) {
@@ -109,6 +133,9 @@ if ($modo === 'mapa_data') {
         }
     }
 
-    responder_json_si_cambia(["provincias" => array_values($provincias), "alertas" => $alertas], $conn);
+    responder_json_si_cambia([
+        "provincias" => array_values($provincias), 
+        "alertas" => $alertas
+    ], $conn);
 }
 ?>

@@ -8,47 +8,94 @@
  */
 :root,
 [data-theme="light"] {
-  --bg: #f5f5f7;
+  /* Tipografía base */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  --bg: #f3f4f6;
   --surface: #ffffff;
-  --surface-soft: #f9f9fb;
-  --surface-offset: #f0f0f5;
-  --text: #1d1d1f;
-  --text-muted: #6e6e73;
-  --border: #d2d2d7;
-  --border-soft: #e5e5ea;
-  --primary: #007aff;
-  --primary-hover: #006ee6;
-  --primary-bg: rgba(0, 122, 255, 0.08);
-  --shadow: 0 1vh 3vh rgba(0, 0, 0, 0.08);
-  --shadow-sm: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.06);
-  --radius-lg: 2vh;
-  --radius-md: 1.5vh;
-  --radius-sm: 1vh;
-  --kpi-total-color: #1d1d1f;
-  --kpi-ok-color: #28a745;
-  --kpi-alerta-color: #a10702;
-  --kpi-log-color: #e07800;
+  --surface-soft: #f9fafb;
+  --surface-offset: #f3f4f6;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --border: #d1d5db;
+  --border-soft: #e5e7eb;
+  
+  /* Primary Premium Accent */
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-bg: rgba(37, 99, 235, 0.1);
+  
+  /* Elevación / Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Curvas y Bordes */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  
+  /* KPIs (Colores más oscuros para mayor contraste en fondo claro) */
+  --kpi-total-color: #111827;
+  --kpi-ok-color: #059669; /* Emerald 600 */
+  --kpi-alerta-color: #dc2626; /* Red 600 */
+  --kpi-log-color: #d97706; /* Amber 600 */
 }
 
 /**
- * Tema Oscuro
+ * Tema Oscuro (Tonos más negros, menos azulados)
  */
 [data-theme="dark"] {
-  --bg: #111113;
-  --surface: #1c1c1e;
-  --surface-soft: #242426;
-  --surface-offset: #2c2c2e;
-  --text: #f5f5f7;
-  --text-muted: #98989f;
-  --border: #3a3a3c;
-  --border-soft: #2c2c2e;
-  --primary: #4da3ff;
-  --primary-hover: #3a90f0;
-  --primary-bg: rgba(77, 163, 255, 0.12);
-  --shadow: 0 1vh 3vh rgba(0, 0, 0, 0.4);
-  --shadow-sm: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.3);
-  --kpi-total-color: #f5f5f7;
-  --kpi-ok-color: #3fcb5f;
-  --kpi-alerta-color: #ff6b6b;
-  --kpi-log-color: #ffaa3c;
+  --bg: #0a0a0a; /* Neutral 950 */
+  --surface: #171717; /* Neutral 900 */
+  --surface-soft: #262626; /* Neutral 800 */
+  --surface-offset: #171717;
+  --text: #f9fafb;
+  --text-muted: #a3a3a3; /* Neutral 400 */
+  --border: #404040; /* Neutral 700 */
+  --border-soft: #262626;
+  
+  /* Primary Premium Accent Dark */
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-bg: rgba(59, 130, 246, 0.15);
+  
+  /* Elevación / Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  
+  /* KPIs (Ajustados para Dark Mode - ligeramente más brillantes) */
+  --kpi-total-color: #f9fafb;
+  --kpi-ok-color: #22c55e;
+  --kpi-alerta-color: #f87171;
+  --kpi-log-color: #fbbf24;
+}
+
+/* Aplicación global de la fuente y transiciones de tema */
+body {
+  font-family: var(--font-family);
+}
+
+body, body *, .modal-content, .kpi-card, .log-item-clickable {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Soporte para View Transitions API */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
+}
+
+/* Logos interactivos para navegación cruzada */
+.page-logo, .floating-logo {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.page-logo:hover, .floating-logo:hover {
+  transform: scale(1.05);
 }

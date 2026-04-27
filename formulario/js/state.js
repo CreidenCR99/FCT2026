@@ -1,5 +1,8 @@
 /**
- * Módulo: state.js
+ * @module state.js
+ * @description Centraliza el estado dinámico de la aplicación de Formulario.
+ * Define la estructura del objeto appState, que mantiene el rastro de filtros,
+ * datos de la tabla, modo de presentación y gestión de modales.
  */
 import { CONFIG } from '../config.js';
 

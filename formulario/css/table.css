@@ -167,45 +167,22 @@
 }
 
 /* Colores de fondo para filas según estado */
-.row-verde {
-  background-color: rgba(40, 167, 69, 0.16) !important;
+/* Colores de fondo para filas según estado */
+.row-verde   { --row-rgb: 40, 167, 69; }
+.row-rojo    { --row-rgb: 161, 7, 2; }
+.row-naranja { --row-rgb: 245, 138, 7; }
+.row-gris    { --row-rgb: 110, 110, 115; }
+
+[class*="row-"] {
+  background-color: rgba(var(--row-rgb), 0.2) !important;
 }
-.row-verde:nth-child(even) {
-  background-color: rgba(40, 167, 69, 0.2) !important;
+[class*="row-"]:nth-child(even) {
+  background-color: rgba(var(--row-rgb), 0.3) !important;
 }
-.row-verde:hover {
-  background-color: rgba(40, 167, 69, 0.24) !important;
+[class*="row-"]:hover {
+  background-color: rgba(var(--row-rgb), 0.4) !important;
 }
 
-.row-rojo {
-  background-color: rgba(161, 7, 2, 0.16) !important;
-}
-.row-rojo:nth-child(even) {
-  background-color: rgba(161, 7, 2, 0.2) !important;
-}
-.row-rojo:hover {
-  background-color: rgba(161, 7, 2, 0.24) !important;
-}
-
-.row-naranja {
-  background-color: rgba(245, 138, 7, 0.16) !important;
-}
-.row-naranja:nth-child(even) {
-  background-color: rgba(245, 138, 7, 0.2) !important;
-}
-.row-naranja:hover {
-  background-color: rgba(245, 138, 7, 0.24) !important;
-}
-
-.row-gris {
-  background-color: rgba(110, 110, 115, 0.16) !important;
-}
-.row-gris:nth-child(even) {
-  background-color: rgba(110, 110, 115, 0.2) !important;
-}
-.row-gris:hover {
-  background-color: rgba(110, 110, 115, 0.24) !important;
-}
 
 /* --- Pills (Badges) de estado --- */
 .estado-pill {

@@ -1,8 +1,10 @@
 <?php
 /**
- * SicoLares Mapa API - Entry Point
+ * @file main.php
+ * @description Controlador frontal (Router) para la API del Mapa.
+ * Canaliza las peticiones hacia el módulo de procesamiento geográfico geo.php.
  */
-require_once __DIR__ . "../../../bootstrap.php";
+require_once __DIR__ . "/../../core/bootstrap.php";
 
 $modo = trim($_GET["modo"] ?? "");
 

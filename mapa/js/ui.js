@@ -1,6 +1,9 @@
 /**
- * Módulo: ui.js
- * Controla los elementos visuales de la interfaz, temporizadores y skeletons.
+ * @module ui.js
+ * @description Controla los elementos visuales de la interfaz de Mapa.
+ * Incluye la lógica de filtros de horario dinámicos (CSS filters), actualización
+ * de temporizadores de rotación con feedback visual, y renderizado de estadísticas
+ * de país mediante morphdom.
  */
 import { appState } from './state.js';
 import { CONFIG } from '../config.js';
@@ -15,15 +18,47 @@ export function mostrarSkeleton() {
 }
 
 /**
+ * Actualiza el texto de la leyenda según la configuración de desconexión.
+ */
+export function actualizarLeyenda() {
+  const legendRed = document.querySelector('.legend .legend-item:last-child');
+  if (legendRed) {
+    legendRed.innerHTML = `<span class="dot rojo"></span> Sin Respuesta (>${CONFIG.OFFLINE_THRESHOLD_MINUTES}m)`;
+  }
+}
+
+/**
  * Ajusta el tono del mapa mediante filtros CSS según la hora del sistema.
  */
 export function aplicarFiltroHorario() {
-  const hour = new Date().getHours();
-  let filter = "brightness(0.25) contrast(1.5) saturate(0.4)"; // Noche default
-  if (hour >= 6 && hour < 10) filter = "brightness(0.5) contrast(1.2) saturate(0.8) sepia(0.3) hue-rotate(-20deg)";
-  else if (hour >= 10 && hour < 18) filter = "brightness(0.8) contrast(1.1) saturate(0.9)";
-  else if (hour >= 18 && hour < 21) filter = "brightness(0.5) contrast(1.2) saturate(0.8) sepia(0.3) hue-rotate(20deg)";
-  document.documentElement.style.setProperty('--map-filter', filter);
+  const modo = CONFIG.FILTRO_HORARIO.MODO;
+  
+  if (modo === 'desactivado') {
+    document.documentElement.style.setProperty('--map-filter', 'none');
+    return;
+  }
+
+  const filters = {
+    mañana:   "brightness(0.5) contrast(1.2) saturate(0.8) sepia(0.3) hue-rotate(-20deg)",
+    mediodia: "brightness(0.8) contrast(1.1) saturate(0.9)",
+    tarde:    "brightness(0.5) contrast(1.2) saturate(0.8) sepia(0.3) hue-rotate(20deg)",
+    noche:    "brightness(0.35) contrast(1.4) saturate(0.6)"
+  };
+
+  let filterKey = modo;
+
+  if (modo === 'auto') {
+    const hour = new Date().getHours();
+    const h = CONFIG.FILTRO_HORARIO;
+    
+    if (hour >= h.MAÑANA && hour < h.MEDIODIA) filterKey = 'mañana';
+    else if (hour >= h.MEDIODIA && hour < h.TARDE) filterKey = 'mediodia';
+    else if (hour >= h.TARDE && hour < h.NOCHE) filterKey = 'tarde';
+    else filterKey = 'noche';
+  }
+
+  const finalFilter = filters[filterKey] || filters.mediodia;
+  document.documentElement.style.setProperty('--map-filter', finalFilter);
 }
 
 /**
@@ -38,9 +73,9 @@ export function actualizarTimers(delta) {
   // Barra de progreso superior
   const bar = document.getElementById("data-refresh-bar");
   if (bar) {
-    const percData = ((CONFIG.MS_DATOS - appState.msNextData) / CONFIG.MS_DATOS) * 100;
+    const percData = ((CONFIG.REFRESH_INTERVAL_MS - appState.msNextData) / CONFIG.REFRESH_INTERVAL_MS) * 100;
     // Con rAF (16ms), la transición CSS ya no es estrictamente necesaria para la suavidad
-    bar.style.transition = appState.msNextData >= CONFIG.MS_DATOS - 50 ? "none" : "width 0.1s linear";
+    bar.style.transition = appState.msNextData >= CONFIG.REFRESH_INTERVAL_MS - 50 ? "none" : "width 0.1s linear";
     bar.style.width = `${Math.min(100, Math.max(0, percData))}%`;
   }
   appState.msNextData = Math.max(0, appState.msNextData - delta);

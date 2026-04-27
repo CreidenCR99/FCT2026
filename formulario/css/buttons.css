@@ -15,6 +15,10 @@
   justify-content: center;
 }
 
+#modalBusqueda { z-index: 3000 !important; }
+.modal { z-index: 2000; }
+#tablaSection:fullscreen .modal { z-index: 999999; }
+
 .btn-primary-outline {
   border-color: var(--primary) !important;
   color: var(--primary) !important;
@@ -67,7 +71,12 @@ button:focus-visible {
 }
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 0.4vh 1.2vh rgba(0, 122, 255, 0.35);
+  transform: translateY(-0.3vh) scale(1.02);
+  box-shadow: 0 0.8vh 2vh rgba(37, 99, 235, 0.35);
+}
+.btn-primary:active {
+  transform: translateY(0.1vh) scale(0.96);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary {
@@ -77,6 +86,11 @@ button:focus-visible {
 }
 .btn-secondary:hover {
   background: var(--border-soft);
+  transform: translateY(-0.2vh) scale(1.01);
+  box-shadow: var(--shadow);
+}
+.btn-secondary:active {
+  transform: translateY(0.1vh) scale(0.97);
 }
 
 /* ========================================================================
@@ -114,18 +128,24 @@ button:focus-visible {
 
 /* Botones "Volver" en cabecera */
 .btn-back {
-  background: var(--surface-offset);
-  color: var(--text-muted);
-  border: 0.2vh solid var(--border);
-  padding: 0.6vh 0.8vw;
-  font-size: 1.3vh;
+  background: var(--primary-bg);
+  color: var(--primary);
+  border: 0.15vh solid var(--primary);
+  padding: 0.8vh 1.2vw;
+  font-size: 1.5vh;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5vw;
 }
 .btn-back:hover {
-  color: var(--text);
-  background: var(--border-soft);
+  background: var(--primary);
+  color: #fff;
+  transform: translateX(-0.3vh);
 }
 .btn-back svg {
-  margin-right: 0.3vw;
+  width: 1.8vh;
+  height: 1.8vh;
 }
 
 /* Grupo de Navegación (Estilo MachineMaster / SearchMaster) */
@@ -150,30 +170,36 @@ button:focus-visible {
   font-weight: bold;
 }
 
-/* Estilos para el selector de tipo de registro */
-.registro-maestro-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8vw, 1fr));
-  gap: 1.5vh;
-  padding: 2vh 1.5vw;
-  justify-items: center;
-}
+/* Estilos para el selector de tipo de registro están en modal.css */
 
-.cerrar-btn, .btn-icon {
-  width: 3.5vh;
-  height: 3.5vh;
-  padding: 0;
+.cerrar-btn, .btn-icon,
+#tablaSection:fullscreen .cerrar-btn,
+#tablaSection:fullscreen .btn-icon {
+  width: 4.5vh;
+  height: 4.5vh;
+  padding: 0 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--border-soft);
-  color: var(--text-muted);
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 0.15vh solid var(--border);
   border-radius: 50%;
   transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
 }
-.cerrar-btn:hover {
-  background: var(--kpi-alerta-color);
-  color: #fff;
+.cerrar-btn:hover,
+#tablaSection:fullscreen .cerrar-btn:hover {
+  background: var(--kpi-alerta-color) !important;
+  color: #fff !important;
+  border-color: var(--kpi-alerta-color) !important;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 0.4vh 1.2vh rgba(220, 38, 38, 0.4);
+}
+.cerrar-btn:active,
+#tablaSection:fullscreen .cerrar-btn:active {
+  transform: rotate(90deg) scale(0.95);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-small {
@@ -194,6 +220,11 @@ button:focus-visible {
 .btn-icon:hover {
   color: var(--text);
   background: var(--border-soft);
+  transform: translateY(-0.1vh);
+  box-shadow: var(--shadow);
+}
+.btn-icon:active {
+  transform: translateY(0) scale(0.98);
 }
 
 /* Estilos para la barra de navegación física en los modales */
